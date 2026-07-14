@@ -1,0 +1,876 @@
+<title>NDP Claim Helper — ตัวช่วยเบิก PP Fee Schedule</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #f4f7f5;
+    --surface: #ffffff;
+    --surface-2: #eef3f0;
+    --ink: #16211d;
+    --ink-soft: #4a5a53;
+    --ink-faint: #7c8a83;
+    --line: #d9e3dd;
+    --line-strong: #c2d0c8;
+    --accent: #0e8c6b;
+    --accent-deep: #0a6b52;
+    --accent-wash: #e2f1eb;
+    --good: #17845a;
+    --good-wash: #e2f1e9;
+    --warn: #a86a11;
+    --warn-wash: #f6ecd8;
+    --crit: #bb3a2c;
+    --crit-wash: #f7e3e0;
+    --info: #2a6f9e;
+    --info-wash: #e2edf5;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(22,33,29,.06), 0 6px 20px rgba(22,33,29,.05);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --thai: "Noto Sans Thai", "Sarabun", "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101613;
+      --surface: #18211d;
+      --surface-2: #202b26;
+      --ink: #e8efeb;
+      --ink-soft: #aab8b1;
+      --ink-faint: #7e8d86;
+      --line: #2b3833;
+      --line-strong: #38473f;
+      --accent: #46c79e;
+      --accent-deep: #6fd9b5;
+      --accent-wash: #16302795;
+      --good: #4cc38a;
+      --good-wash: #16302795;
+      --warn: #e0b25c;
+      --warn-wash: #33291250;
+      --crit: #ef8a7d;
+      --crit-wash: #3a1f1c60;
+      --info: #7cb8e0;
+      --info-wash: #1c2c3a60;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f7f5; --surface: #ffffff; --surface-2: #eef3f0; --ink: #16211d;
+    --ink-soft: #4a5a53; --ink-faint: #7c8a83; --line: #d9e3dd; --line-strong: #c2d0c8;
+    --accent: #0e8c6b; --accent-deep: #0a6b52; --accent-wash: #e2f1eb;
+    --good: #17845a; --good-wash: #e2f1e9; --warn: #a86a11; --warn-wash: #f6ecd8;
+    --crit: #bb3a2c; --crit-wash: #f7e3e0; --info: #2a6f9e; --info-wash: #e2edf5;
+    --shadow: 0 1px 2px rgba(22,33,29,.06), 0 6px 20px rgba(22,33,29,.05);
+  }
+  :root[data-theme="dark"] {
+    --bg: #101613; --surface: #18211d; --surface-2: #202b26; --ink: #e8efeb;
+    --ink-soft: #aab8b1; --ink-faint: #7e8d86; --line: #2b3833; --line-strong: #38473f;
+    --accent: #46c79e; --accent-deep: #6fd9b5; --accent-wash: #16302795;
+    --good: #4cc38a; --good-wash: #16302795; --warn: #e0b25c; --warn-wash: #33291250;
+    --crit: #ef8a7d; --crit-wash: #3a1f1c60; --info: #7cb8e0; --info-wash: #1c2c3a60;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--thai); line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 18px 80px; }
+
+  /* Header */
+  header.top {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .top-inner { max-width: 940px; margin: 0 auto; padding: 14px 18px 0; }
+  .brandrow { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 38px; height: 38px; border-radius: 10px; flex: 0 0 auto;
+    background: linear-gradient(150deg, var(--accent), var(--accent-deep));
+    display: grid; place-items: center; color: #fff; font-weight: 800;
+    box-shadow: var(--shadow); letter-spacing: .5px;
+  }
+  .brandrow h1 { font-size: 1.06rem; margin: 0; font-weight: 750; letter-spacing: -.01em; }
+  .brandrow p { margin: 1px 0 0; font-size: .78rem; color: var(--ink-faint); }
+  .themebtn {
+    margin-left: auto; border: 1px solid var(--line-strong); background: var(--surface);
+    color: var(--ink-soft); border-radius: 9px; height: 34px; padding: 0 12px;
+    font-family: inherit; font-size: .8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  .themebtn:hover { border-color: var(--accent); color: var(--accent); }
+
+  nav.tabs { display: flex; gap: 2px; margin-top: 12px; overflow-x: auto; }
+  nav.tabs button {
+    border: 0; background: none; font-family: inherit; cursor: pointer;
+    padding: 10px 13px 12px; font-size: .86rem; font-weight: 600; color: var(--ink-faint);
+    border-bottom: 2.5px solid transparent; white-space: nowrap;
+  }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .panel { display: none; animation: fade .25s ease; }
+  .panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .intro { margin: 22px 0 6px; }
+  .intro h2 { font-size: 1.28rem; margin: 0 0 4px; letter-spacing: -.02em; text-wrap: balance; }
+  .intro p { margin: 0; color: var(--ink-soft); font-size: .9rem; max-width: 62ch; }
+
+  .privacy {
+    display: inline-flex; align-items: center; gap: 7px; margin-top: 12px;
+    background: var(--good-wash); color: var(--good); border: 1px solid color-mix(in srgb, var(--good) 30%, transparent);
+    padding: 6px 11px; border-radius: 999px; font-size: .76rem; font-weight: 600;
+  }
+
+  /* Search + filters */
+  .toolbar { margin: 18px 0 14px; position: sticky; top: calc(var(--top-offset, 96px) + 8px); z-index: 10; }
+  .search {
+    display: flex; align-items: center; gap: 9px; background: var(--surface);
+    border: 1px solid var(--line-strong); border-radius: 11px; padding: 0 12px;
+    box-shadow: var(--shadow);
+  }
+  .search svg { flex: 0 0 auto; color: var(--ink-faint); }
+  .search input {
+    border: 0; outline: 0; background: none; color: var(--ink); font-family: inherit;
+    font-size: .95rem; padding: 12px 0; width: 100%;
+  }
+  .search kbd {
+    font-family: var(--mono); font-size: .68rem; color: var(--ink-faint);
+    border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; background: var(--surface-2);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .chip {
+    border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft);
+    border-radius: 999px; padding: 5px 12px; font-family: inherit; font-size: .8rem; cursor: pointer;
+    font-weight: 600; transition: .12s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .countline { margin: 12px 2px 0; font-size: .8rem; color: var(--ink-faint); }
+  .countline b { color: var(--ink); font-weight: 700; }
+
+  /* Activity cards */
+  .cards { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card > summary {
+    list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 13px;
+  }
+  .card > summary::-webkit-details-marker { display: none; }
+  .cnum {
+    font-family: var(--mono); font-size: .72rem; font-weight: 700; color: var(--accent-deep);
+    background: var(--accent-wash); border-radius: 7px; padding: 5px 7px; flex: 0 0 auto; min-width: 30px; text-align: center;
+  }
+  .ctitle { flex: 1 1 auto; min-width: 0; }
+  .ctitle .nm { font-weight: 650; font-size: .93rem; letter-spacing: -.01em; }
+  .ctitle .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; align-items: center; }
+  .tag {
+    font-size: .68rem; font-weight: 650; padding: 2px 8px; border-radius: 999px;
+    background: var(--surface-2); color: var(--ink-soft); border: 1px solid var(--line);
+  }
+  .tag.cat { background: var(--info-wash); color: var(--info); border-color: transparent; }
+  .tag.pren { background: var(--warn-wash); color: var(--warn); border-color: transparent; }
+  .price { font-family: var(--mono); font-weight: 750; font-size: .92rem; color: var(--ink); white-space: nowrap; }
+  .price small { color: var(--ink-faint); font-weight: 500; }
+  .chev { flex: 0 0 auto; color: var(--ink-faint); transition: transform .2s; }
+  .card[open] .chev { transform: rotate(180deg); }
+
+  .cbody { padding: 2px 16px 16px; border-top: 1px solid var(--line); }
+  .recipe { margin-top: 14px; display: flex; flex-direction: column; gap: 9px; }
+  .rrow {
+    display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: start;
+    padding: 10px 12px; background: var(--surface-2); border-radius: 9px;
+    border-left: 3px solid var(--accent);
+  }
+  .rrow .rlabel { font-size: .78rem; font-weight: 700; color: var(--ink-soft); }
+  .rrow .rlabel small { display: block; font-weight: 500; color: var(--ink-faint); font-size: .7rem; margin-top: 2px; }
+  .rrow .rval { font-size: .84rem; }
+  .code {
+    font-family: var(--mono); font-size: .8rem; font-weight: 600; background: var(--surface);
+    border: 1px solid var(--line-strong); border-radius: 6px; padding: 1px 6px; color: var(--accent-deep);
+    display: inline-block; margin: 2px 3px 2px 0;
+  }
+  .subhead { font-size: .74rem; font-weight: 750; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ink-faint); margin: 16px 0 8px; }
+  .example {
+    font-family: var(--mono); font-size: .82rem; background: var(--accent-wash);
+    border: 1px dashed color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 8px;
+    padding: 7px 8px 7px 11px; color: var(--ink); margin-bottom: 7px; word-break: break-word;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .example > span { flex: 1 1 auto; }
+  .example b { color: var(--accent-deep); }
+  .copybtn {
+    flex: 0 0 auto; border: 1px solid transparent; background: transparent; color: var(--accent-deep);
+    border-radius: 6px; width: 28px; height: 28px; display: grid; place-items: center; cursor: pointer; transition: .12s;
+  }
+  .copybtn:hover { background: var(--surface); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  .copybtn.ok { color: var(--good); }
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: .82rem;
+    font-weight: 600; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: .25s; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .note {
+    display: flex; gap: 8px; margin-top: 12px; font-size: .8rem; color: var(--ink-soft);
+    background: var(--warn-wash); border-radius: 8px; padding: 9px 11px;
+  }
+  .note svg { flex: 0 0 auto; color: var(--warn); margin-top: 1px; }
+  .empty { text-align: center; padding: 50px 20px; color: var(--ink-faint); }
+
+  /* Error decoder */
+  .err { display: flex; flex-direction: column; gap: 4px; }
+  .errcard {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 15px 16px; display: grid; grid-template-columns: auto 1fr; gap: 0 14px;
+  }
+  .sev {
+    grid-row: 1 / span 3; width: 4px; border-radius: 4px; align-self: stretch;
+  }
+  .sev.crit { background: var(--crit); } .sev.warn { background: var(--warn); } .sev.info { background: var(--info); }
+  .errcode { font-family: var(--mono); font-size: .82rem; font-weight: 700; color: var(--ink); }
+  .errcode .badge {
+    font-size: .64rem; padding: 2px 7px; border-radius: 5px; margin-left: 8px; vertical-align: middle;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .badge.crit { background: var(--crit-wash); color: var(--crit); }
+  .badge.warn { background: var(--warn-wash); color: var(--warn); }
+  .badge.info { background: var(--info-wash); color: var(--info); }
+  .errmsg { font-size: .82rem; color: var(--ink-soft); margin: 6px 0 10px; font-family: var(--mono); }
+  .errfix { font-size: .87rem; }
+  .errfix .fixlabel { font-weight: 700; color: var(--good); font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; }
+  .errpath {
+    font-family: var(--mono); font-size: .76rem; background: var(--surface-2); color: var(--ink-soft);
+    border-radius: 6px; padding: 2px 7px; display: inline-block; margin-top: 5px;
+  }
+
+  /* Checklist */
+  .clgroup { margin-top: 16px; }
+  .clgroup h3 {
+    font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent-deep);
+    margin: 0 0 8px; font-weight: 750;
+  }
+  .clitem {
+    display: flex; gap: 12px; align-items: flex-start; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .clitem input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; cursor: pointer; }
+  .clitem .cltxt { font-size: .88rem; }
+  .clitem .clpath { font-family: var(--mono); font-size: .74rem; color: var(--ink-faint); margin-top: 4px; }
+  .clitem.done .cltxt { text-decoration: line-through; color: var(--ink-faint); }
+  .progress {
+    position: sticky; top: calc(var(--top-offset, 96px) + 8px); z-index: 8; background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 11px; padding: 12px 15px; box-shadow: var(--shadow); margin-top: 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .bar { flex: 1 1 auto; height: 9px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-deep)); border-radius: 999px; transition: width .3s; }
+  .progress b { font-family: var(--mono); font-size: .86rem; }
+  .resetcl { border: 0; background: none; color: var(--ink-faint); font-family: inherit; font-size: .76rem; cursor: pointer; text-decoration: underline; }
+
+  /* CODESYS table */
+  .tablewrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; background: var(--surface); }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--surface-2); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); font-weight: 750; }
+  tr:last-child td { border-bottom: 0; }
+  td .code { margin: 0; }
+  td b { font-weight: 700; }
+
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); font-size: .76rem; color: var(--ink-faint); }
+  footer b { color: var(--ink-soft); }
+  a { color: var(--accent-deep); }
+
+  @media (max-width: 620px) {
+    .rrow { grid-template-columns: 1fr; gap: 4px; }
+    .rrow .rlabel small { display: inline; margin-left: 4px; }
+    .ctitle .nm { font-size: .89rem; }
+  }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brandrow">
+      <div class="mark">NDP</div>
+      <div>
+        <h1>ตัวช่วยเบิก NHSO Digital Platform</h1>
+        <p>รหัสเบิก PP Fee Schedule · ถอดรหัส Error · Checklist ตั้งค่า — สำหรับ รพ.สต.</p>
+      </div>
+      <button class="themebtn" id="themebtn" aria-label="สลับธีม">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M6 6L4.5 4.5M19.5 19.5 18 18M18 6l1.5-1.5M4.5 19.5 6 18"/></svg>
+        <span>ธีม</span>
+      </button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="pp">รหัสเบิก PP</button>
+      <button role="tab" aria-selected="false" data-tab="err">ถอดรหัส Error</button>
+      <button role="tab" aria-selected="false" data-tab="checklist">Checklist ตั้งค่า</button>
+      <button role="tab" aria-selected="false" data-tab="ref">อ้างอิง CODESYS</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ TAB: PP ============ -->
+  <section class="panel active" id="tab-pp">
+    <div class="intro">
+      <h2>ค้นหาชุดรหัสเบิก PP Fee Schedule</h2>
+      <p>เลือกกิจกรรมที่ให้บริการ แล้วดูว่าต้องจับคู่ ICD-10 กับรหัสตรวจ (TMLT / CSMBS / NHSO / TMT) อย่างไรให้ 1 ชุดเบิกสมบูรณ์ ไม่ติด C ตอนส่งเข้า NDP</p>
+      <div class="privacy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        ทำงานในเครื่องคุณทั้งหมด — ไม่มีการส่งข้อมูลผู้ป่วยออกนอกอุปกรณ์
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="ค้นหา… เช่น ฝากครรภ์, คุมกำเนิด, Z113, VDRL, มะเร็งปากมดลูก, วัณโรค" autocomplete="off" />
+        <kbd>/</kbd>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="countline">พบ <b id="count">0</b> กิจกรรม จากทั้งหมด <span id="total">0</span> รายการ</div>
+    </div>
+
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- ============ TAB: ERR ============ -->
+  <section class="panel" id="tab-err">
+    <div class="intro">
+      <h2>ถอดรหัส Error ตอนส่งเคลม</h2>
+      <p>วาง/พิมพ์ข้อความ Error ที่ระบบ HOSxP แจ้งตอน “ตรวจสอบเบื้องต้นก่อนส่ง” หรือ NDP ตีกลับ แล้วดูสาเหตุและวิธีแก้ที่ต้นทาง</p>
+    </div>
+    <div class="toolbar" style="position:static">
+      <div class="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="qerr" type="search" placeholder="เช่น ProviderType, Auth Code, INVOICE_NO, Token, ใบประกอบวิชาชีพ" autocomplete="off" />
+      </div>
+    </div>
+    <div class="err" id="errlist"></div>
+  </section>
+
+  <!-- ============ TAB: CHECKLIST ============ -->
+  <section class="panel" id="tab-checklist">
+    <div class="intro">
+      <h2>Checklist ตั้งค่าก่อนส่ง 13 แฟ้ม Plus</h2>
+      <p>ตั้งค่าพื้นฐานใน HOSxP XE PCU ให้ครบก่อนส่งครั้งแรก — ข้อที่มักตกหล่นคือ Provider Type, รหัสมาตรฐาน และการปิดลูกหนี้ให้ได้เลข Invoice</p>
+    </div>
+    <div class="progress">
+      <b id="clcount">0/0</b>
+      <div class="bar"><i id="clbar" style="width:0"></i></div>
+      <button class="resetcl" id="resetcl">ล้างทั้งหมด</button>
+    </div>
+    <div id="checklist"></div>
+  </section>
+
+  <!-- ============ TAB: REF ============ -->
+  <section class="panel" id="tab-ref">
+    <div class="intro">
+      <h2>อ้างอิงระบบรหัส (CODESYS)</h2>
+      <p>ฟิลด์ <b>CODESYS</b> ในแฟ้ม CHAD บอกว่ารหัสรายการที่ส่งมาอ้างอิงจากมาตรฐานใด เพื่อให้ NDP จับคู่ (map) รายการได้ถูกต้อง</p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>รหัส</th><th>ระบบ</th><th>ใช้กับ</th></tr></thead>
+        <tbody id="codesys"></tbody>
+      </table>
+    </div>
+    <div class="intro" style="margin-top:26px">
+      <h2 style="font-size:1.05rem">หมวดค่าใช้จ่าย (BILLGRCS) ที่พบบ่อย</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>หมวด</th><th>ความหมาย</th></tr></thead>
+        <tbody id="billgrp"></tbody>
+      </table>
+    </div>
+    <footer>
+      <p><b>ที่มาข้อมูล:</b> เอกสาร “วิธีการเบิกกิจกรรมส่งเสริมป้องกัน (PP) 105 กิจกรรม” (ปรับปรุง 27 ม.ค. 69), คู่มือ BMS-HOSxP XE PCU การตั้งค่า 13 แฟ้ม Plus, และเอกสารทีม Korat Claim / สปสช. เขต 8–9</p>
+      <p style="margin-top:8px">เครื่องมือนี้เป็น <b>ตัวช่วยจำและตรวจสอบเบื้องต้น</b> — โปรดยึดประกาศ สปสช. และโครงสร้างชุดข้อมูลฉบับล่าสุดเป็นหลักเสมอ เพราะรหัสและเงื่อนไขมีการปรับปรุงเป็นระยะ</p>
+    </footer>
+  </section>
+</div>
+
+<div class="toast" id="toast">คัดลอกแล้ว</div>
+
+<script>
+const CATS = {
+  anc:  "ฝากครรภ์/คนท้อง",
+  newborn: "หลังคลอด/ทารก",
+  contra: "คุมกำเนิด",
+  cancer: "คัดกรองมะเร็ง",
+  tb: "วัณโรค",
+  ncd: "เบาหวาน/ไขมัน/โลหิตจาง",
+  hep: "ตับอักเสบ",
+  vaccine: "วัคซีน",
+  other: "อื่น ๆ"
+};
+
+// r(label, sublabel, value) — value may contain <code>…</code>
+function c(x){ return '<span class="code">'+x+'</span>'; }
+// Highlight only genuine code tokens (ICD-10, lab/CSMBS/NHSO codes), not label words
+function hc(s){
+  return s.replace(/([A-Z]{1,3}\d{2,}[A-Za-z0-9]*|\d?[A-Z]\d{3,}|\d{3,}[A-Za-z]*|[A-Z]{2,}_[A-Z0-9]+)/g, m=>c(m));
+}
+function esc(x){ return x.replace(/[&<>"]/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+
+const DATA = [
+  { no:1, cat:"anc", pren:true, price:360, nm:"ค่าบริการดูแลการฝากครรภ์ (เหมาจ่าย/ครั้ง)",
+    recipe:[["ICD-10","เลือก 1","Z340, Z348, Z349, Z350–Z359 (เลือก 1 รหส)"]],
+    ex:["<b>Z340</b> (1 ชุด = ICD-10 เพียง 1 รหัส)"],
+    note:"กิจกรรมคนท้องต้องมีแฟ้ม NHSO Prenatal เสมอ · ค่าตรวจของสามีให้ใช้ CID สามีแนบในแฟ้มหญิงตั้งครรภ์"},
+
+  { no:2, cat:"anc", pren:true, price:600, nm:"แล็บ ANC ชุดแรก: VDRL, HIV, HBsAg, CBC+MCV/DCIP, Blood group",
+    recipe:[
+      ["ICD-10","","Z340–Z359 (เลือก 1)"],
+      ["VDRL","TMLT หรือ CSMBS","TMT 350057/350058 หรือ CSMBS 36003"],
+      ["HIV Ab","CSMBS","36350 หรือ 36351"],
+      ["HBsAg","CSMBS","36318 หรือ 36319"],
+      ["CBC+MCV/DCIP","CSMBS","30101 / 30102 / 30213"],
+      ["Blood group","CSMBS","22105/22112/22106/22108/22109/22113 หรือ 30118–30121, 30130, 30131"]],
+    ex:["<b>Z340</b> + 350057 + 36350 + 36318 + 30101 + 22105"],
+    note:"เลือกได้อย่างละ 1 รหัสต่อรายการ ห้ามใช้รหัสซ้ำในชุดเดียวกัน"},
+
+  { no:3, cat:"anc", pren:true, price:190, nm:"แล็บ ANC ชุดที่สอง: VDRL, HIV Antibody",
+    recipe:[["ICD-10","","Z340–Z359 (เลือก 1)"],["VDRL","CSMBS","36003"],["HIV Ab","CSMBS/TMLT","36350 / 36351 หรือ TMLT 350230"]],
+    ex:["<b>Z340</b> + 36003 + 36351"],
+    note:"1 ชุด = ICD-10(1) + VDRL(1) + HIV Ab(1)"},
+
+  { no:4, cat:"anc", pren:true, price:400, nm:"อัลตราซาวด์ (หน้าท้อง/ภายใน) อายุครรภ์ ≥ 32 สัปดาห์",
+    recipe:[["ICD-10","","Z340–Z359 (เลือก 1)"],["หัตถการ","ICD-9-CM","8878 / 8879 / 8876"],["CSMBS","","52612 / 43601 / 43506"]],
+    ex:["<b>Z340</b> + 8878 + 52612"],
+    note:"1 ชุด = ICD-10(1)+ICD-9(1)+CSMBS(1) ห้ามใช้รหัสซ้ำในชุด"},
+
+  { no:5, cat:"anc", pren:true, price:500, nm:"ตรวจสุขภาพช่องปาก + ขูดหินปูน (หญิงตั้งครรภ์)",
+    recipe:[["ICD-10","","Z340–Z359 (เลือก 1)"],
+      ["ICD-10-TM กลุ่ม 1","เลือก 1","2330011 หรือ 2330013"],
+      ["ICD-10-TM กลุ่ม 2","เลือก 1","2387010 / 2277310 / 2277320 / 2287310 / 2287320"]],
+    ex:["<b>Z340</b> + 2330013 + 2277320"],
+    note:"ต้องมี ICD-10-TM ครบทั้ง 2 กลุ่มในชุดเดียวกัน"},
+
+  { no:6, cat:"anc", pren:true, price:270, nm:"Hemoglobin typing (วินิจฉัยธาลัสซีเมียทารกในครรภ์)",
+    recipe:[["ICD-10","","Z130"],["ตรวจ","TMLT หรือ CSMBS","TMLT 300124 หรือ CSMBS 30313"]],
+    ex:["<b>Z130</b> + 300124 (TMLT)","<b>Z130</b> + 30313 (CSMBS)"],
+    note:"เลือก TMLT หรือ CSMBS อย่างใดอย่างหนึ่ง"},
+
+  { no:12, cat:"anc", pren:true, price:120, nm:"คัดกรองธาลัสซีเมีย: CBC+MCV และ/หรือ DCIP/HbE",
+    recipe:[["ICD-10","","Z130"],
+      ["CBC+MCV","TMLT/CSMBS","TMLT 300035/300034 หรือ CSMBS 30102/30101"],
+      ["DCIP/HbE","CSMBS","300058"]],
+    ex:["<b>Z130</b> + 300035 + 300058"],
+    note:"หมวด BILLGRCS 07 · CODESYS 004-CSMBS / 002-TMLT"},
+
+  { no:13, cat:"anc", pren:true, price:50, nm:"คัดกรองซิฟิลิส ด้วย VDRL",
+    recipe:[["ICD-10","","Z113"],["CSMBS","","36003"]],
+    ex:["<b>Z113</b> + 36003"], note:""},
+
+  { no:20, cat:"anc", pren:true, price:100, nm:"ค่าเจาะเลือดปั่นซีรัม",
+    recipe:[["ICD-10","","Z360"],["CSMBS","","DOW_HSEND"]],
+    ex:["<b>Z360</b> + DOW_HSEND"], note:"หมวด BILLGRCS 18"},
+
+  { no:30, cat:"newborn", pren:false, price:150, nm:"ตรวจหลังคลอด (PNC: Postnatal care)",
+    recipe:[["ICD-10","เลือก 1","Z390 / Z391 / Z392"],["NHSO","","300015"]],
+    ex:["<b>Z390</b> + 300015"], note:"หมวด BILLGRCS 18 · CODESYS 005-NHSO"},
+
+  { no:31, cat:"newborn", pren:false, price:135, nm:"ยา Triferdine (เสริมธาตุเหล็ก/โฟลิก/ไอโอดีน) หลังคลอด",
+    recipe:[["ICD-10","","Z392"],["NHSO","","300016"]],
+    ex:["<b>Z392</b> + 300016"],
+    note:"ต้องเบิกพร้อมค่าตรวจหลังคลอด · ส่งแฟ้ม NHSO Newborn · จ่ายไม่เกิน 2 ครั้ง/ครรภ์"},
+
+  { no:32, cat:"contra", pren:false, price:75, nm:"ชุดทดสอบการตั้งครรภ์ด้วยตนเอง",
+    recipe:[["ICD-10","เลือก 1","Z320 / Z321"],["ตรวจ","CSMBS หรือ NHSO","CSMBS 31101 หรือ NHSO 30017/30014"]],
+    ex:["<b>Z320</b> + 31101 (CSMBS)","<b>Z320</b> + 30017 (NHSO)"], note:""},
+
+  { no:33, cat:"contra", pren:false, price:40, nm:"ยาเม็ดคุมกำเนิดฮอร์โมนรวม (COC)",
+    recipe:[["ICD-10","","Z304"],["TMT (GPU)","หมวด 03,04","เลือก 1 จาก 699723, 682043, 681994, 695803, 100546 … ฯลฯ"]],
+    ex:["<b>Z304</b> + 683423"], note:"CODESYS 001-TMT"},
+
+  { no:35, cat:"contra", pren:false, price:60, nm:"ยาฉีดคุมกำเนิด (รวมค่าให้คำปรึกษา)",
+    recipe:[["ICD-10","","Z304"],["TMT (GPU)","","683336 / 1151175 / 680114 / 206271 / 206318 / 206341 / 572362"]],
+    ex:["<b>Z304</b> + 680114"], note:""},
+
+  { no:36, cat:"contra", pren:false, price:800, nm:"ใส่ห่วงอนามัย (IUD)",
+    recipe:[["ICD-10","","Z301"],["ICD-9","","697"],["TMT","GPU/TPU","GPU 664751 หรือ TPU 664779"]],
+    ex:["<b>Z301</b> + 697 + 664751"], note:"ต้องระบุ ICD-10 คู่กับ ICD-9 697 · หมวดเบิก TMT (001)"},
+
+  { no:37, cat:"contra", pren:false, price:2150, nm:"ฝังยาคุมกำเนิด",
+    recipe:[["ICD-10","","Z308"],["ICD-9","","9923"],["TMT (GPU)","","681607 หรือ 680466"]],
+    ex:["<b>Z308</b> + 9923 + 681607"], note:"ต้องระบุ ICD-10 คู่กับ ICD-9 · หมวด TMT (001)"},
+
+  { no:38, cat:"contra", pren:false, price:350, nm:"ถอดยาฝังคุมกำเนิด",
+    recipe:[["ICD-10","","Z30X (X=0–9)"],["ICD-9","","8605"]],
+    ex:["<b>Z30X</b> + 8605"], note:""},
+
+  { no:39, cat:"contra", pren:false, price:50, nm:"ยาเม็ดคุมกำเนิดฉุกเฉิน",
+    recipe:[["ICD-10","","Z30X (X=0–9)"],["TMT (GPU)","","365478 หรือ 850398"]],
+    ex:["<b>Z30x</b> + 365478"], note:"หมวดเบิก TMT (001)"},
+
+  { no:40, cat:"contra", pren:false, price:10, nm:"ถุงยางอนามัย (พร้อมให้คำปรึกษา)",
+    recipe:[["ICD-10","","Z30X หรือ Z304"],["NHSO","ตามขนาด","6201005(49มม.) / 6201006(52) / 6201007(54) / 6201001(56)"]],
+    ex:["<b>Z30X</b> + 6201007"], note:"หมวด BILLGRCS 18"},
+
+  { no:41, cat:"other", pren:false, price:3000, nm:"ยุติการตั้งครรภ์ที่ไม่ปลอดภัย (EVA / MVA)",
+    recipe:[
+      ["ICD-10","เลือก 1","O040–O049 · (O285 และ D560–D569) · O010–O019/O020/O021/O364 · O030/O032/O033/O034"],
+      ["ICD-9","","6951"],
+      ["NHSO","","TLM_PNC (ทั่วไป) · AB003 (EVA) · AB002 (MVA)"]],
+    ex:["<b>O040</b> + 6951 + AB003 (EVA)","<b>O032</b> + 6951 + TLM_PNC"],
+    note:"ต้องระบุ ICD-10 คู่กับ ICD-9 6951 · หมวดเบิก NHSO"},
+
+  { no:42, cat:"other", pren:false, price:800, nm:"แว่นตาเด็กสายตาผิดปกติ – Stock lens",
+    recipe:[["ICD-10","","H52X หรือ H53X (X=0–9)"],["NHSO","","2206"]],
+    ex:["<b>H52X</b> + 2206"], note:"ตรวจสายตาแล้วห้ามเบิกค่าตรวจซ้ำ · แว่นเบิกได้อย่างใดอย่างหนึ่ง"},
+
+  { no:44, cat:"cancer", pren:false, price:50, nm:"คัดกรองมะเร็งปากมดลูก (ค่าเก็บ) – HPV DNA",
+    recipe:[["ICD-10","","Z115"],["ICD-9","","9146"],["CSMBS","","38608"]],
+    ex:["<b>Z115</b> + 9146 + 38608"], note:""},
+
+  { no:45, cat:"cancer", pren:false, price:280, nm:"HPV DNA (self-sampling) – ชุดน้ำยา/อุปกรณ์",
+    recipe:[["ICD-10","","Z014 หรือ Z124"],["ICD-9","","9146"],["TMLT","","381243"]],
+    ex:["<b>Z014</b> + 9146 + 381243"], note:""},
+
+  { no:47, cat:"cancer", pren:false, price:250, nm:"คัดกรองมะเร็งปากมดลูก (Pap Smear) – ไม่ส่งค่าเก็บ",
+    recipe:[["ICD-10","","Z014 หรือ Z124"],["ตรวจ","TMLT หรือ CSMBS","TMLT P38430/P38302 หรือ CSMBS 71660"]],
+    ex:["<b>Z014</b> + P38430 (TMLT)","<b>Z014</b> + 71660 (CSMBS)"], note:""},
+
+  { no:50, cat:"cancer", pren:false, price:900, nm:"ยืนยันมะเร็งปากมดลูก (Colposcopy) – HPV 16/18",
+    recipe:[["ICD-10","","Z014 หรือ Z124"],["ICD-9","","6711 / 6712 / 6732 / 6719"],["ตรวจ","CSMBS หรือ NHSO","CSMBS 71661 หรือ NHSO 1B005"]],
+    ex:["<b>Z014</b> + 6711 + 71661"], note:"1 ชุด = ICD-10 + ICD-9 + (CSMBS หรือ NHSO)"},
+
+  { no:52, cat:"tb", pren:false, price:100, nm:"คัดกรองวัณโรคด้วย CXR (Chest X-ray) – ทั่วไป",
+    recipe:[["ICD-10","","Z111"],["ตรวจ","CSMBS หรือ NHSO","CSMBS 41001 หรือ NHSO MTB_CXR"]],
+    ex:["<b>Z111</b> + 41001 (CSMBS)","<b>Z111</b> + MTB_CXR (NHSO)"], note:""},
+
+  { no:54, cat:"tb", pren:false, price:200, nm:"คัดกรองวัณโรค Molecular – TB-LAMP",
+    recipe:[["ICD-10","","Z111"],["TMLT","","351285"]],
+    ex:["<b>Z111</b> + 351285"], note:""},
+
+  { no:61, cat:"tb", pren:false, price:20, nm:"AFB stain (Acid-Fast Bacilli)",
+    recipe:[["ICD-10","","Z111"],["ตรวจ","CSMBS หรือ NHSO","CSMBS 35001 หรือ NHSO ACF_AFB"]],
+    ex:["<b>Z111</b> + 35001","<b>Z111</b> + ACF_AFB"], note:""},
+
+  { no:62, cat:"tb", pren:false, price:200, nm:"เพาะเลี้ยงเชื้อ Culture – Solid media",
+    recipe:[["ICD-10","","Z111"],["ตรวจ","CSMBS หรือ NHSO","CSMBS 35103 หรือ NHSO ACF_CUSO"]],
+    ex:["<b>Z111</b> + 35103","<b>Z111</b> + ACF_CUSO"], note:""},
+
+  { no:64, cat:"ncd", pren:false, price:40, nm:"FPG (น้ำตาลในเลือดอดอาหาร) – กลุ่มเสี่ยง 35–59 ปี",
+    recipe:[["ICD-10","","Z018"],["ตรวจ","เลือกระบบเดียว","TMLT 320281 · CSMBS 32203 · NHSO 12003"]],
+    ex:["<b>Z018</b> + 320281 (TMLT)","<b>Z018</b> + 12003 (NHSO)"], note:""},
+
+  { no:65, cat:"ncd", pren:false, price:160, nm:"Total Cholesterol + HDL (อายุ ≥ 35 ปี)",
+    recipe:[["ICD-10","","Z108"],["ตรวจ","เลือก 1 หมวด","TMT(GPU) 31001 · TMLT 320259 · CSMBS 32004 · NHSO 12004"]],
+    ex:["<b>Z108</b> + 320259 (TMLT)","<b>Z108</b> + 32004 (CSMBS)"], note:""},
+
+  { no:69, cat:"ncd", pren:false, price:65, nm:"คัดกรองโลหิตจางจากขาดธาตุเหล็ก (CBC) – หญิง 13–24 ปี",
+    recipe:[["ICD-10","","Z130"],["ตรวจ","TMLT หรือ CSMBS","TMLT 300034/300035 หรือ CSMBS 30101/30102/13001"]],
+    ex:["<b>Z130</b> + 300034 (TMLT)"], note:"ยกเว้นหญิงตั้งครรภ์ (ใช้ PP ประเทศ)"},
+
+  { no:70, cat:"ncd", pren:false, price:80, nm:"ยาเม็ดเสริมธาตุเหล็ก (Ferrofolic)",
+    recipe:[["ICD-10","","Z130"],["TMT (GPU)","","37390 / 689609 / 855606 / 737839 / 715594 / 767382 …"]],
+    ex:["<b>Z130</b> + 37390"], note:""},
+
+  { no:71, cat:"other", pren:false, price:100, nm:"เคลือบฟลูออไรด์ (กลุ่มเสี่ยง)",
+    recipe:[["ICD-10","","C00–C14, C30–C33, R682, K117, K060 (เลือก 1)"],
+      ["ตรวจ","CSMBS หรือ ICD-10-TM","CSMBS 61101 หรือ ICD-10-TM 2377020/2377021/2387020/2387021"]],
+    ex:["<b>C00</b> + 61101 (CSMBS)","<b>C00</b> + 2377020 (ICD-10-TM)"], note:""},
+
+  { no:72, cat:"cancer", pren:false, price:60, nm:"คัดกรองมะเร็งลำไส้ใหญ่ (FIT Test)",
+    recipe:[["ICD-10","","Z121"],["ตรวจ","TMLT หรือ CSMBS","TMLT 300222/300013/300127 หรือ CSMBS 31209"]],
+    ex:["<b>Z121</b> + 300222 (TMLT)","<b>Z121</b> + 31209 (CSMBS)"], note:""},
+
+  { no:73, cat:"hep", pren:false, price:50, nm:"คัดกรองไวรัสตับอักเสบ B – HBsAg",
+    recipe:[["ICD-10","","Z115"],["ตรวจ","TMLT หรือ CSMBS","TMLT 350162/350163 หรือ CSMBS 36318/36319"]],
+    ex:["<b>Z115</b> + 350163 (TMLT)","<b>Z115</b> + 36318 (CSMBS)"], note:""},
+
+  { no:74, cat:"hep", pren:false, price:50, nm:"คัดกรองไวรัสตับอักเสบ C – Anti-HCV",
+    recipe:[["ICD-10","","Z115"],["CSMBS","","36331"]],
+    ex:["<b>Z115</b> + 36331"], note:"ชุดตรวจเร็ว/เครื่องอัตโนมัติ – รวมค่าเก็บ"},
+
+  { no:76, cat:"hep", pren:false, price:1690, nm:"HCV RNA (qualitative / quantitative)",
+    recipe:[["ICD-10","","B182"],["ตรวจ","TMLT หรือ CSMBS","TMLT 350911/350169/350170/350482/350483/350724 หรือ CSMBS 36333"]],
+    ex:["<b>B182</b> + 350911 (TMLT)","<b>B182</b> + 36333 (CSMBS)"], note:""},
+
+  { no:78, cat:"cancer", pren:false, price:2400, nm:"คัดกรองมะเร็งเต้านม – Mammogram + Ultrasound",
+    recipe:[["ICD-10","","Z803"],["ICD-9","2 รหัส","8737 + 8873"],
+      ["CSMBS","","42330 / 42331 / 42332 / 42333"]],
+    ex:["<b>Z803</b> + 8737 + 8873 + 42331"], note:"ICD-9 ต้องมี 2 รหัส"},
+
+  { no:79, cat:"vaccine", pren:false, price:20, nm:"วัคซีน dT (คอตีบ-บาดทะยัก) ผู้ใหญ่",
+    recipe:[["ICD-10","","Z235 หรือ Z236"],["TMT","GPU หรือ TPU","GPU 668487/1020331/979150… หรือ TPU 668879/853396…"]],
+    ex:["<b>Z235</b> + 668487 (GPU)","<b>Z235</b> + 668879 (TPU)"], note:""}
+];
+
+const ERRORS = [
+  { sev:"crit", code:"L100 (แฟ้ม 3)", msg:"ProviderType ไม่มีในฐานข้อมูลของ สปสช.",
+    fix:"ตั้งค่า Provider Type และรหัสสภาวิชาชีพให้บุคลากรทุกคนที่ให้บริการ",
+    path:"Tools > OPD > บุคลากรทางการแพทย์ (กรอก: เลขใบประกอบวิชาชีพ, CID, Provider Type, รหัสสภาวิชาชีพ 01–07)",
+    kw:"l100 providertype provider type แฟ้ม3 บุคลากร สภาวิชาชีพ"},
+
+  { sev:"crit", code:"API Token", msg:"กรุณาตั้งค่า API Token ก่อน / ไม่สามารถส่งข้อมูล 13 แฟ้ม Plus เชื่อมโยงมาที่ NDP ได้",
+    fix:"ใส่ Token ที่ขอจาก สปสช. และเปิดใช้งาน API 13 แฟ้ม Plus",
+    path:"Tools > System > System Setting > ค้นหา “13 แฟ้ม” → ใส่ TOKEN + ตั้ง URL API = Y แล้ว Finance > ทะเบียนส่งเคลม > Task > ตั้งค่า > เลือก “API 13 แฟ้ม Plus”",
+    kw:"token api 13แฟ้ม url ตั้งค่า เชื่อมโยง"},
+
+  { sev:"crit", code:"Auth Code / Opd.PERMITNO", msg:"Auth Code, Opd.PERMITNO ว่าง",
+    fix:"ตรวจสอบสิทธิและขอ Authen Code ก่อนส่งเคลม",
+    path:"หน้าส่งเคลม > กดปุ่ม “Check Authen Code” / ตรวจสอบสิทธิ สปสช. ให้ได้เลขอนุมัติก่อน",
+    kw:"auth code authen permitno ว่าง สิทธิ อนุมัติ"},
+
+  { sev:"crit", code:"Diagnosis.PROFESSION_ID", msg:"เลขใบประกอบวิชาชีพ (ผู้วินิจฉัย) ว่าง / Practitioner ว่าง",
+    fix:"กรอกเลขใบประกอบวิชาชีพให้ผู้ตรวจวินิจฉัย และระบุผู้ให้บริการในวันที่รักษา",
+    path:"Tools > OPD > บุคลากรทางการแพทย์ → เลขใบประกอบวิชาชีพ / หน้าตรวจรักษา → ระบุผู้ตรวจวินิจฉัย",
+    kw:"profession id ใบประกอบ practitioner ผู้วินิจฉัย ว่าง"},
+
+  { sev:"warn", code:"Diagnosis.SEQ / DATEDX / DIAG / DIAGTYPE", msg:"ข้อมูลการวินิจฉัยไม่ครบ (SEQ, DATEDX, DIAG, DIAGTYPE)",
+    fix:"ตรวจการวินิจฉัยให้ครบ: มีรหัส ICD-10, ประเภทการวินิจฉัย (หลัก/รอง) และวันที่วินิจฉัย",
+    path:"หน้าตรวจรักษา > การวินิจฉัย → เพิ่มรหัสโรค + กำหนด DIAGTYPE",
+    kw:"diagnosis seq datedx diag diagtype วินิจฉัย icd ประเภท"},
+
+  { sev:"crit", code:"Cha.INVOICE_NO / Chad.INVOICE_NO", msg:"เลขที่หนังสือ (INVOICE_NO) ต้องมากกว่า 0",
+    fix:"ต้องปิดลูกหนี้ให้ได้เลข Invoice ก่อนส่งเคลม (แฟ้ม CHA/CHAD ต้องมีเลขใบแจ้งหนี้)",
+    path:"Finance > ปิดลูกหนี้ (hosxp_xepcu) → ได้เลข Invoice + เลขปิดสิทธิ แล้วจึงส่งเข้า NDP",
+    kw:"invoice no cha chad เลขที่หนังสือ ปิดลูกหนี้ ลูกหนี้ invoice"},
+
+  { sev:"warn", code:"Cha.TOTAL", msg:"จำนวนเงินรวมทั้ง Visit (Cha.TOTAL) ไม่ถูกต้อง",
+    fix:"ตรวจว่ามีการบันทึกค่าบริการ/ยาครบ และยอดรวมของ Visit มากกว่า 0",
+    path:"หน้าตรวจรักษา > การสั่งยา/ค่าบริการ → บันทึกรายการให้ครบก่อนปิด Visit",
+    kw:"cha total จำนวนเงิน ยอดรวม visit"},
+
+  { sev:"info", code:"INSCL / สิทธิการรักษา", msg:"รหัส INSCL สิทธิการรักษาไม่ตรงมาตรฐาน สปสช.",
+    fix:"ตั้งค่ารหัสมาตรฐาน INSCL ให้ตรงกับสิทธิการรักษาของ สปสช.",
+    path:"Tools > OPD > สิทธิการรักษา → ช่องรหัสมาตรฐาน INSCL",
+    kw:"inscl สิทธิ รักษา มาตรฐาน opd"},
+
+  { sev:"warn", code:"CODESYS / รหัสไม่ map", msg:"รายการยา/บริการส่งไปแล้ว NDP จับคู่ (map) ไม่ได้",
+    fix:"ตรวจว่ารายการมี CODESYS ถูกระบบ (TMT/TMLT/CSMBS/NHSO) และรหัสตรงกับมาตรฐาน",
+    path:"Tools > ตั้งค่ารายการยา (TMT GPU/TPU) · รายการค่าบริการ (ADP Code/Type, Bill Code) · Lab (TMLT)",
+    kw:"codesys map รหัส tmt tmlt csmbs nhso adp bill รายการ"}
+];
+
+const CHECKLIST = [
+  { g:"เชื่อมต่อระบบ", items:[
+    ["ใส่ TOKEN 13 แฟ้ม สปสช. + ตั้ง URL API = Y", "System Setting > ค้นหา “13 แฟ้ม”"],
+    ["เปิดใช้งาน “API 13 แฟ้ม Plus”", "Finance > ทะเบียนส่งเคลม > Task > ตั้งค่า"]]},
+  { g:"ข้อมูลบุคลากร", items:[
+    ["กรอกเลขใบประกอบวิชาชีพ + CID ครบทุกคน", "Tools > OPD > บุคลากรทางการแพทย์"],
+    ["กำหนด Provider Type + รหัสสภาวิชาชีพ (01–07)", "แพทยสภา 01 · พยาบาล 02 · เภสัช 03 · ทันตะ 04 …"]]},
+  { g:"ข้อมูลพื้นฐานการเงิน", items:[
+    ["ตั้งรหัสมาตรฐานสิทธิ INSCL", "Tools > OPD > สิทธิการรักษา"],
+    ["ตั้งหมวดค่ารักษาพยาบาล + อัตราค่าบริการ", "Tools > Finance > หมวดค่ารักษาพยาบาล"],
+    ["ผูกรายการยากับ TMT (GPU/TPU) + Drug Catalog", "หมวด 03,04 · CODESYS 001-TMT"],
+    ["ผูกรายการค่าบริการกับ ADP Code/Type + Bill Code", "NonDrug Item"],
+    ["ผูกรายการ Lab กับ TMLT", "CODESYS 002-TMLT"]]},
+  { g:"ก่อนส่งแต่ละครั้ง", items:[
+    ["บันทึกวินิจฉัย ICD-10 + DIAGTYPE ครบ", "หน้าตรวจรักษา > การวินิจฉัย"],
+    ["ตรวจสอบสิทธิ + Authen Code ให้ผ่าน", "Check Authen Code"],
+    ["ปิดลูกหนี้ให้ได้เลข Invoice + ปิดสิทธิ", "Finance > ปิดลูกหนี้ (CHA/CHAD ต้องมี INVOICE_NO)"],
+    ["กด “ตรวจสอบเบื้องต้นก่อนส่ง” แก้ Error ให้หมด", "แล้วจึงกดส่งเคลม"]]}
+];
+
+const CODESYS = [
+  ["001","TMT (Thai Medicines Terminology)","ยาแผนปัจจุบันทั้งหมด — TMTID, TPU, GPU"],
+  ["002","TMLT (Thai Medical Laboratory Terminology)","รายการ Lab เช่น CBC, FBS, HbA1c"],
+  ["003","TTMT (Thai Traditional Medicine Terminology)","ยาสมุนไพร/ยาแผนไทย"],
+  ["004","CSMBS (กรมบัญชีกลาง)","อ้างอิงบัญชีค่ารักษาสิทธิข้าราชการ (UC/LGO ใช้ร่วม)"],
+  ["005","NHSO","รหัสที่ สปสช. กำหนดเอง สำหรับรายการเฉพาะกองทุน UC"],
+  ["006","UCEP","สิทธิฉุกเฉินวิกฤต (อัตรา/เงื่อนไขแยกต่างหาก)"],
+  ["007","ICD-9-CM","รหัสหัตถการ/ผ่าตัดตามมาตรฐานสากล"],
+  ["008","ICD-10-TM","กลุ่มโรค/อาการ/หัตถการแพทย์แผนไทย"]
+];
+
+const BILLGRP = [
+  ["02","ค่าอวัยวะเทียม/อุปกรณ์ (เช่น แว่นตา)"],
+  ["03, 04","ค่ายา (TMT — GPU/TPU)"],
+  ["07","ค่าตรวจทางห้องปฏิบัติการ/พยาธิวิทยา (TMLT/CSMBS)"],
+  ["11","ค่าหัตถการและวิสัญญี (ICD-9)"],
+  ["18","ค่าบริการอื่น/รายการเฉพาะ (NHSO/CSMBS)"]
+];
+
+/* ---------- Render PP ---------- */
+const cardsEl = document.getElementById('cards');
+const qEl = document.getElementById('q');
+const chipsEl = document.getElementById('chips');
+let activeCat = "all";
+
+document.getElementById('total').textContent = DATA.length;
+
+function buildChips(){
+  const cats = ["all", ...Object.keys(CATS)];
+  chipsEl.innerHTML = cats.map(k=>{
+    const label = k==="all" ? "ทั้งหมด" : CATS[k];
+    return `<button class="chip" data-cat="${k}" aria-pressed="${k==='all'}">${label}</button>`;
+  }).join('');
+  chipsEl.querySelectorAll('.chip').forEach(b=>{
+    b.onclick=()=>{ activeCat=b.dataset.cat;
+      chipsEl.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed', x.dataset.cat===activeCat));
+      render(); };
+  });
+}
+
+function matches(d, q){
+  if(activeCat!=="all" && d.cat!==activeCat) return false;
+  if(!q) return true;
+  const hay = (d.nm+" "+CATS[d.cat]+" "+d.no+" "+JSON.stringify(d.recipe)+" "+(d.note||"")).toLowerCase();
+  return q.toLowerCase().split(/\s+/).every(t=>hay.includes(t));
+}
+
+function render(){
+  const q = qEl.value.trim();
+  const list = DATA.filter(d=>matches(d,q));
+  document.getElementById('count').textContent = list.length;
+  if(!list.length){ cardsEl.innerHTML = `<div class="empty">ไม่พบกิจกรรมที่ตรงกับ “${q}” — ลองคำอื่น เช่น ชื่อบริการ หรือรหัส ICD-10</div>`; return; }
+  cardsEl.innerHTML = list.map(d=>{
+    const recipe = d.recipe.map(r=>`
+      <div class="rrow">
+        <div class="rlabel">${r[0]}${r[1]?`<small>${r[1]}</small>`:''}</div>
+        <div class="rval">${hc(esc(r[2]))}</div>
+      </div>`).join('');
+    const ex = d.ex.map(e=>{
+      const plain = e.replace(/<[^>]+>/g,'');
+      return `<div class="example"><span>${e}</span><button class="copybtn" data-copy="${esc(plain)}" title="คัดลอกชุดรหัส" aria-label="คัดลอกชุดรหัส"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>`;
+    }).join('');
+    const note = d.note ? `<div class="note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div>${d.note}</div></div>` : '';
+    return `<details class="card">
+      <summary>
+        <span class="cnum">${d.no}</span>
+        <span class="ctitle">
+          <span class="nm">${d.nm}</span>
+          <span class="meta">
+            <span class="tag cat">${CATS[d.cat]}</span>
+            ${d.pren?'<span class="tag pren">ต้องมีแฟ้ม Prenatal</span>':''}
+          </span>
+        </span>
+        <span class="price">฿${d.price.toLocaleString()}</span>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <div class="cbody">
+        <div class="subhead">1 ชุดเบิกต้องประกอบด้วย</div>
+        <div class="recipe">${recipe}</div>
+        <div class="subhead">ตัวอย่างชุดเบิก</div>
+        ${ex}
+        ${note}
+      </div>
+    </details>`;
+  }).join('');
+}
+buildChips(); render();
+qEl.addEventListener('input', render);
+
+/* ---------- Render Errors ---------- */
+const errEl = document.getElementById('errlist');
+const qErr = document.getElementById('qerr');
+function renderErr(){
+  const q = qErr.value.trim().toLowerCase();
+  const list = ERRORS.filter(e=> !q || (e.code+" "+e.msg+" "+e.fix+" "+e.kw).toLowerCase().includes(q));
+  if(!list.length){ errEl.innerHTML = `<div class="empty">ไม่พบ Error ที่ตรงกับ “${q}”</div>`; return; }
+  const label = {crit:"ต้องแก้", warn:"ควรตรวจ", info:"ข้อมูล"};
+  errEl.innerHTML = list.map(e=>`
+    <div class="errcard">
+      <span class="sev ${e.sev}"></span>
+      <div>
+        <div class="errcode">${e.code}<span class="badge ${e.sev}">${label[e.sev]}</span></div>
+        <div class="errmsg">“${e.msg}”</div>
+        <div class="errfix"><span class="fixlabel">วิธีแก้</span> — ${e.fix}
+          <div class="errpath">${e.path}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+renderErr();
+qErr.addEventListener('input', renderErr);
+
+/* ---------- Render Checklist ---------- */
+const clEl = document.getElementById('checklist');
+const STORE = 'ndp-checklist-v1';
+let clState = {};
+try { clState = JSON.parse(localStorage.getItem(STORE)||'{}'); } catch(e){}
+function renderCl(){
+  let idx=0, total=0, done=0;
+  clEl.innerHTML = CHECKLIST.map(grp=>{
+    const items = grp.items.map(it=>{
+      const id='cl'+(idx++); total++;
+      const checked = !!clState[id]; if(checked) done++;
+      return `<label class="clitem ${checked?'done':''}" for="${id}">
+        <input type="checkbox" id="${id}" ${checked?'checked':''}>
+        <span><span class="cltxt">${it[0]}</span><span class="clpath">${it[1]}</span></span>
+      </label>`;
+    }).join('');
+    return `<div class="clgroup"><h3>${grp.g}</h3>${items}</div>`;
+  }).join('');
+  document.getElementById('clcount').textContent = done+'/'+total;
+  document.getElementById('clbar').style.width = (total?done/total*100:0)+'%';
+  clEl.querySelectorAll('input').forEach(inp=>{
+    inp.onchange=()=>{ clState[inp.id]=inp.checked; localStorage.setItem(STORE, JSON.stringify(clState)); renderCl(); };
+  });
+}
+renderCl();
+document.getElementById('resetcl').onclick=()=>{ clState={}; localStorage.removeItem(STORE); renderCl(); };
+
+/* ---------- Render Ref ---------- */
+document.getElementById('codesys').innerHTML = CODESYS.map(r=>`<tr><td><span class="code">${r[0]}</span></td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('');
+document.getElementById('billgrp').innerHTML = BILLGRP.map(r=>`<tr><td><span class="code">${r[0]}</span></td><td>${r[1]}</td></tr>`).join('');
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected', b===btn));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  };
+});
+
+/* ---------- Copy example ---------- */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg){
+  toast.textContent = msg; toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>toast.classList.remove('show'), 1400);
+}
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('.copybtn'); if(!btn) return;
+  e.preventDefault();
+  const txt = btn.getAttribute('data-copy');
+  navigator.clipboard?.writeText(txt).then(()=>{
+    btn.classList.add('ok'); showToast('คัดลอกชุดรหัสแล้ว');
+    setTimeout(()=>btn.classList.remove('ok'), 900);
+  }).catch(()=>showToast('คัดลอกไม่สำเร็จ'));
+});
+
+/* ---------- Theme (persisted) ---------- */
+const THEME_KEY = 'ndp-theme';
+const savedTheme = localStorage.getItem(THEME_KEY);
+if(savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+const tbtn = document.getElementById('themebtn');
+tbtn.onclick=()=>{
+  const cur = document.documentElement.getAttribute('data-theme')
+    || (window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const next = cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+};
+
+/* ---------- Dynamic sticky offset (header height) ---------- */
+function setTopOffset(){
+  const h = document.querySelector('header.top').offsetHeight;
+  document.documentElement.style.setProperty('--top-offset', h + 'px');
+}
+setTopOffset();
+window.addEventListener('resize', setTopOffset);
+
+/* ---------- "/" focuses search ---------- */
+document.addEventListener('keydown', e=>{
+  if(e.key==='/' && document.activeElement.tagName!=='INPUT'){
+    e.preventDefault();
+    const active = document.querySelector('.panel.active');
+    const inp = active && active.querySelector('input[type=search]');
+    if(inp) inp.focus();
+  }
+});
+</script>
