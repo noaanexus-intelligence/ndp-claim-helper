@@ -102,6 +102,48 @@ const CHECKS = [
     },
   },
   {
+    id: 'drug_no_adp',
+    title: 'รายการยาที่ยังไม่ผูก NHSO ADP Code',
+    severity: 'warn',
+    fixHint: 'ตั้งค่ารายการยา → กำหนด ADP Code/Type (หมวด 03,04 · CODESYS 001-TMT)',
+    relatedError: 'NDP จับคู่ (map) รายการยาไม่ได้',
+    uses: ['drugitems'],
+    build: (m) => {
+      const t = m.drugitems, c = t.cols;
+      const act = c.active ? `AND ${qid(c.active)} = 'Y'` : '';
+      return {
+        sql: `SELECT ${qid(c.code)} AS icode, ${qid(c.name)} AS name,
+                     ${qid(c.adpCode)} AS adp_code, ${qid(c.adpType)} AS adp_type
+                FROM ${qid(t.table)}
+               WHERE ${isBlank(qid(c.adpCode))} ${act}
+               ORDER BY ${qid(c.name)}
+               LIMIT 500`,
+        params: [],
+      };
+    },
+  },
+  {
+    id: 'nondrug_no_adp',
+    title: 'รายการค่าบริการ/หัตถการที่ยังไม่ผูก NHSO ADP Code',
+    severity: 'warn',
+    fixHint: 'ตั้งค่ารายการค่ารักษาพยาบาล (NonDrug Item) → ADP Code/Type + Bill Code',
+    relatedError: 'NDP จับคู่ (map) รายการบริการไม่ได้',
+    uses: ['nondrugitems'],
+    build: (m) => {
+      const t = m.nondrugitems, c = t.cols;
+      const act = c.active ? `AND ${qid(c.active)} = 'Y'` : '';
+      return {
+        sql: `SELECT ${qid(c.code)} AS icode, ${qid(c.name)} AS name,
+                     ${qid(c.adpCode)} AS adp_code, ${qid(c.adpType)} AS adp_type
+                FROM ${qid(t.table)}
+               WHERE ${isBlank(qid(c.adpCode))} ${act}
+               ORDER BY ${qid(c.name)}
+               LIMIT 500`,
+        params: [],
+      };
+    },
+  },
+  {
     id: 'visit_no_diag',
     title: 'Visit ที่ยังไม่มีการวินิจฉัยเลย — ช่วง N วันล่าสุด',
     severity: 'crit',

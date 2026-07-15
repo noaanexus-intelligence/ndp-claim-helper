@@ -65,6 +65,33 @@ const DEFAULT_MAP = {
       type: 'diagtype',
     },
   },
+  // รายการยา (ตารางตั้งค่า — แก้ไขได้)
+  // ✅ ยืนยันแล้วว่ามี nhso_adp_code / nhso_adp_type_id (คอลัมน์ icode/name/istatus รอยืนยัน)
+  drugitems: {
+    table: 'drugitems',
+    writable: true,
+    cols: {
+      code: 'icode',
+      name: 'name',
+      adpCode: 'nhso_adp_code',
+      adpType: 'nhso_adp_type_id',
+      active: 'istatus',
+    },
+  },
+  // รายการค่าบริการ/หัตถการ (ตารางตั้งค่า — แก้ไขได้)
+  // ✅ ยืนยันแล้วว่ามี nhso_adp_code / nhso_adp_type_id / nhso_project_code
+  nondrugitems: {
+    table: 'nondrugitems',
+    writable: true,
+    cols: {
+      code: 'icode',
+      name: 'name',
+      adpCode: 'nhso_adp_code',
+      adpType: 'nhso_adp_type_id',
+      projectCode: 'nhso_project_code',
+      active: 'istatus',
+    },
+  },
 };
 
 function loadMap() {

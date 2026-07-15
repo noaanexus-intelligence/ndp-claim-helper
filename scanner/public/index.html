@@ -125,6 +125,8 @@
         <div><label>ตารางตั้งค่า</label><br><select id="fxLogical" style="width:100%">
           <option value="doctor">บุคลากรทางการแพทย์ (doctor)</option>
           <option value="pttype">สิทธิการรักษา (pttype)</option>
+          <option value="drugitems">รายการยา (drugitems)</option>
+          <option value="nondrugitems">รายการค่าบริการ (nondrugitems)</option>
         </select></div>
         <div><label>ค่าที่จะแก้ (logical field)</label><br><select id="fxField" style="width:100%"></select></div>
         <div><label>รหัส (key) ของแถวที่จะแก้</label><br><input id="fxKey" style="width:100%" placeholder="เช่น รหัสบุคลากร / รหัสสิทธิ"></div>
@@ -217,7 +219,7 @@ $('#descBtn')&&($('#descBtn').onclick=async()=>{
 });
 
 /* ---- fix ---- */
-const FIELDS={ doctor:[['license','เลขใบประกอบวิชาชีพ'],['providerType','Provider Type (provider_type_code)'],['council','รหัสสภาวิชาชีพ (01-07)']], pttype:[['std','รหัสมาตรฐาน INSCL (nhso_code)'],['subinscl','INSCL ย่อย (nhso_subinscl)'],['stdCode','รหัสมาตรฐาน 4 หลัก (pttype_std_code)']] };
+const FIELDS={ doctor:[['license','เลขใบประกอบวิชาชีพ'],['providerType','Provider Type (provider_type_code)'],['council','รหัสสภาวิชาชีพ (01-07)']], pttype:[['std','รหัสมาตรฐาน INSCL (nhso_code)'],['subinscl','INSCL ย่อย (nhso_subinscl)'],['stdCode','รหัสมาตรฐาน 4 หลัก (pttype_std_code)']], drugitems:[['adpCode','NHSO ADP Code'],['adpType','NHSO ADP Type ID']], nondrugitems:[['adpCode','NHSO ADP Code'],['adpType','NHSO ADP Type ID'],['projectCode','NHSO Project Code']] };
 function refreshFields(){ const l=$('#fxLogical').value; $('#fxField').innerHTML=FIELDS[l].map(f=>`<option value="${f[0]}">${f[1]}</option>`).join(''); }
 $('#fxLogical').onchange=refreshFields; refreshFields();
 let lastFix=null;
