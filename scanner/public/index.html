@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NDP Claim Scanner (on-premise)</title>
+<style>
+  :root{
+    --bg:#f4f7f5; --surface:#fff; --surface-2:#eef3f0; --ink:#16211d; --ink-soft:#4a5a53; --ink-faint:#7c8a83;
+    --line:#d9e3dd; --line-strong:#c2d0c8; --accent:#0e8c6b; --accent-deep:#0a6b52; --accent-wash:#e2f1eb;
+    --good:#17845a; --good-wash:#e2f1e9; --warn:#a86a11; --warn-wash:#f6ecd8; --crit:#bb3a2c; --crit-wash:#f7e3e0;
+    --info:#2a6f9e; --info-wash:#e2edf5;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --thai:"Noto Sans Thai","Sarabun",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#101613; --surface:#18211d; --surface-2:#202b26; --ink:#e8efeb; --ink-soft:#aab8b1; --ink-faint:#7e8d86;
+    --line:#2b3833; --line-strong:#38473f; --accent:#46c79e; --accent-deep:#6fd9b5; --accent-wash:#1630278f;
+    --good:#4cc38a; --good-wash:#1630278f; --warn:#e0b25c; --warn-wash:#33291250; --crit:#ef8a7d; --crit-wash:#3a1f1c60;
+    --info:#7cb8e0; --info-wash:#1c2c3a60;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--thai);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 18px 80px}
+  header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .hin{max-width:1000px;margin:0 auto;padding:12px 18px 0;display:flex;flex-direction:column;gap:10px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:36px;height:36px;border-radius:9px;background:linear-gradient(150deg,var(--accent),var(--accent-deep));display:grid;place-items:center;color:#fff;font-weight:800;font-size:.8rem}
+  .brand h1{font-size:1rem;margin:0;font-weight:750}
+  .brand p{margin:1px 0 0;font-size:.76rem;color:var(--ink-faint)}
+  .conn{margin-left:auto;font-size:.75rem;font-family:var(--mono);display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--ink-faint)}
+  .dot.ok{background:var(--good)} .dot.bad{background:var(--crit)}
+  .wmode{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px}
+  .wmode.ro{background:var(--good-wash);color:var(--good)} .wmode.rw{background:var(--warn-wash);color:var(--warn)}
+  nav{display:flex;gap:2px;overflow-x:auto}
+  nav button{border:0;background:none;font-family:inherit;cursor:pointer;padding:10px 13px 12px;font-size:.86rem;font-weight:600;color:var(--ink-faint);border-bottom:2.5px solid transparent;white-space:nowrap}
+  nav button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+  .panel{display:none} .panel.active{display:block}
+  h2{font-size:1.2rem;margin:22px 0 4px;letter-spacing:-.02em}
+  .sub{color:var(--ink-soft);font-size:.88rem;margin:0 0 14px;max-width:70ch}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;font-family:inherit;font-weight:650;font-size:.84rem;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .btn:hover{background:var(--accent-deep)} .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--accent-deep)}
+  .btn.danger{background:var(--crit);border-color:var(--crit)}
+  input,select{font-family:inherit;font-size:.86rem;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink)}
+  label{font-size:.78rem;font-weight:650;color:var(--ink-soft)}
+  .tag{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px}
+  .tag.crit{background:var(--crit-wash);color:var(--crit)} .tag.warn{background:var(--warn-wash);color:var(--warn)} .tag.info{background:var(--info-wash);color:var(--info)}
+  .tag.ok{background:var(--good-wash);color:var(--good)} .tag.no{background:var(--surface-2);color:var(--ink-faint)}
+  .hint{font-size:.78rem;color:var(--ink-faint);margin-top:6px;font-family:var(--mono)}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;background:var(--surface)}
+  th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--surface-2);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint)}
+  tr:last-child td{border-bottom:0}
+  .count{font-family:var(--mono);font-weight:750}
+  .banner{display:flex;gap:9px;padding:11px 13px;border-radius:10px;font-size:.82rem;margin:8px 0 4px}
+  .banner.crit{background:var(--crit-wash);color:var(--crit)} .banner.warn{background:var(--warn-wash);color:var(--warn)} .banner.info{background:var(--info-wash);color:var(--info)}
+  .mono{font-family:var(--mono)}
+  code{font-family:var(--mono);background:var(--surface-2);padding:1px 5px;border-radius:5px;font-size:.9em}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hin">
+    <div class="brand">
+      <div class="mark">NDP</div>
+      <div>
+        <h1>NDP Claim Scanner</h1>
+        <p>สแกนหา record ที่จะติด C ก่อนส่ง NDP · แก้เฉพาะตารางตั้งค่า (on-premise)</p>
+      </div>
+      <div class="conn"><span class="dot" id="dot"></span><span id="conntxt">กำลังเชื่อมต่อ…</span><span class="wmode ro" id="wmode">อ่านอย่างเดียว</span></div>
+    </div>
+    <nav>
+      <button aria-selected="true" data-tab="scan">สแกนหาปัญหา</button>
+      <button aria-selected="false" data-tab="schema">สำรวจ Schema</button>
+      <button aria-selected="false" data-tab="fix">แก้ตารางตั้งค่า</button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- SCAN -->
+  <section class="panel active" id="tab-scan">
+    <h2>สแกนหา record ที่จะติด C</h2>
+    <p class="sub">แต่ละรายการอ่านฐานข้อมูลอย่างเดียว ไม่แก้อะไร — กด “สแกน” เพื่อดูรายการที่ต้องแก้ พร้อมบอกว่าไปแก้ที่เมนูไหน</p>
+    <div class="row" style="margin-bottom:8px">
+      <label>ช่วงข้อมูลย้อนหลัง <input id="sinceDays" type="number" value="30" min="1" max="365" style="width:70px"> วัน</label>
+      <span class="hint">(ใช้กับ check ที่อิงวันที่รับบริการ)</span>
+    </div>
+    <div id="checklist"></div>
+  </section>
+
+  <!-- SCHEMA -->
+  <section class="panel" id="tab-schema">
+    <h2>สำรวจ Schema ของ HOSxP</h2>
+    <p class="sub">ยืนยันว่าชื่อตาราง/คอลัมน์ในเวอร์ชันของคุณตรงกับที่โปรแกรมคาดไว้ไหม ถ้าไม่ตรง ให้แก้ไฟล์ <code>schema-map.json</code> แล้วรีสตาร์ท</p>
+    <div class="banner info">ขั้นแรกให้ทำหน้านี้ก่อน — ส่งผลให้ปุ่ม “สแกน” และ “แก้ไข” ทำงานถูกต้อง (ไม่มีการส่งข้อมูลออกนอกเครื่อง)</div>
+    <div class="card">
+      <b>สถานะ schema-map</b>
+      <div class="tablewrap"><table id="schemaStatus"><thead><tr><th>logical</th><th>ตารางจริง</th><th>สถานะ</th><th>เขียนได้</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="row"><b>เปิดดูตารางในฐานข้อมูล</b>
+        <select id="tableSel" style="min-width:220px"></select>
+        <button class="btn ghost" id="descBtn">ดูคอลัมน์</button>
+      </div>
+      <div class="tablewrap" id="colsWrap" style="display:none"><table id="colsTbl"><thead><tr><th>คอลัมน์</th><th>ชนิด</th><th>key</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- FIX -->
+  <section class="panel" id="tab-fix">
+    <h2>แก้ไขตารางตั้งค่า</h2>
+    <p class="sub">แก้ได้เฉพาะข้อมูลตั้งค่า (บุคลากร / สิทธิการรักษา) เท่านั้น — มีขั้นดูตัวอย่างก่อน สำรองค่าเดิมอัตโนมัติ และต้องกดยืนยัน</p>
+    <div class="banner warn" id="rwWarn">โหมดแก้ไขปิดอยู่ (ALLOW_WRITES=false) — ตั้งเป็น <code>true</code> ใน <code>.env</code> แล้วรีสตาร์ทก่อน จึงจะแก้จริงได้ (ดูตัวอย่างทำได้เลย)</div>
+    <div class="card">
+      <div class="grid2">
+        <div><label>ตารางตั้งค่า</label><br><select id="fxLogical" style="width:100%">
+          <option value="doctor">บุคลากรทางการแพทย์ (doctor)</option>
+          <option value="pttype">สิทธิการรักษา (pttype)</option>
+        </select></div>
+        <div><label>ค่าที่จะแก้ (logical field)</label><br><select id="fxField" style="width:100%"></select></div>
+        <div><label>รหัส (key) ของแถวที่จะแก้</label><br><input id="fxKey" style="width:100%" placeholder="เช่น รหัสบุคลากร / รหัสสิทธิ"></div>
+        <div><label>ค่าใหม่</label><br><input id="fxVal" style="width:100%" placeholder="เช่น 02 (สภาการพยาบาล)"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="previewBtn">ดูตัวอย่างก่อนแก้</button>
+        <button class="btn danger" id="applyBtn" disabled>ยืนยันแก้จริง</button>
+      </div>
+      <div id="fxResult"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+async function api(path,opts){ const r=await fetch(path,opts); const j=await r.json(); if(!j.ok) throw new Error(j.error||'error'); return j; }
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---- connection ---- */
+let CONN=false;
+async function refreshConn(){
+  try{ const j=await api('/api/ping');
+    CONN=true; $('#dot').className='dot ok';
+    $('#conntxt').textContent = j.info.db+' @ '+(j.info.user||'');
+    const rw=j.writesAllowed; $('#wmode').className='wmode '+(rw?'rw':'ro'); $('#wmode').textContent=rw?'แก้ไขได้ ⚠️':'อ่านอย่างเดียว';
+    if(rw) $('#rwWarn').style.display='none';
+  }catch(e){ CONN=false; $('#dot').className='dot bad'; $('#conntxt').textContent='ต่อ DB ไม่ได้: '+e.message; }
+}
+
+/* ---- checks ---- */
+async function loadChecks(){
+  const box=$('#checklist'); box.innerHTML='กำลังโหลด…';
+  try{
+    const j=await api('/api/checks');
+    box.innerHTML = j.checks.map(c=>`
+      <div class="card" data-id="${c.id}">
+        <div class="row">
+          <span class="tag ${c.severity}">${c.severity==='crit'?'ต้องแก้':c.severity==='warn'?'ควรตรวจ':'ข้อมูล'}</span>
+          <b>${esc(c.title)}</b>
+          ${c.ready?'<button class="btn" data-run="'+c.id+'">สแกน</button>':'<span class="tag no">ต้องแมป schema</span>'}
+          <span style="margin-left:auto" class="count" id="cnt-${c.id}"></span>
+        </div>
+        <div class="hint">แก้ที่: ${esc(c.fixHint)}${c.relatedError?' · error: '+esc(c.relatedError):''}${c.ready?'':' · '+esc(c.note)}</div>
+        <div id="res-${c.id}"></div>
+      </div>`).join('');
+    box.querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>runCheck(b.dataset.run));
+  }catch(e){ box.innerHTML='<div class="banner crit">โหลดรายการไม่ได้: '+esc(e.message)+'</div>'; }
+}
+async function runCheck(id){
+  const res=$('#res-'+id), cnt=$('#cnt-'+id); res.innerHTML='กำลังสแกน…';
+  try{
+    const j=await api('/api/run-check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,sinceDays:Number($('#sinceDays').value)})});
+    cnt.textContent = j.count+' รายการ'; cnt.style.color = j.count?'var(--crit)':'var(--good)';
+    if(!j.count){ res.innerHTML='<div class="banner info">ไม่พบปัญหา 🎉</div>'; return; }
+    const cols=Object.keys(j.rows[0]);
+    const head='<tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
+    const body=j.rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(r[c])+'</td>').join('')+'</tr>').join('');
+    res.innerHTML=`<div class="row" style="margin-top:8px"><button class="btn ghost" data-csv="${id}">ดาวน์โหลด CSV</button></div>
+      <div class="tablewrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+    res.querySelector('[data-csv]').onclick=()=>downloadCsv(id,cols,j.rows);
+  }catch(e){ res.innerHTML='<div class="banner crit">'+esc(e.message)+'</div>'; }
+}
+function downloadCsv(id,cols,rows){
+  const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>'"'+String(r[c]==null?'':r[c]).replace(/"/g,'""')+'"').join(','))).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='ndp_'+id+'.csv'; a.click();
+}
+
+/* ---- schema ---- */
+async function loadSchema(){
+  try{
+    const j=await api('/api/schema-status');
+    $('#schemaStatus tbody').innerHTML=Object.entries(j.status).map(([k,v])=>{
+      const st=v.missingTable?'<span class="tag crit">ไม่พบตาราง</span>':v.ok?'<span class="tag ok">ตรง</span>':'<span class="tag warn">คอลัมน์ไม่ตรง: '+esc((v.missingCols||[]).join(', '))+'</span>';
+      return `<tr><td class="mono">${k}</td><td class="mono">${esc(v.table)}</td><td>${st}</td><td>${v.writable?'✓':'—'}</td></tr>`;
+    }).join('');
+  }catch(e){}
+  try{
+    const j=await api('/api/tables');
+    $('#tableSel').innerHTML=j.tables.map(t=>`<option>${esc(t.name)}</option>`).join('');
+  }catch(e){}
+}
+$('#descBtn')&&($('#descBtn').onclick=async()=>{
+  const t=$('#tableSel').value; const w=$('#colsWrap');
+  try{ const j=await api('/api/columns?table='+encodeURIComponent(t));
+    $('#colsTbl tbody').innerHTML=j.columns.map(c=>`<tr><td class="mono">${esc(c.name)}</td><td class="mono">${esc(c.type)}</td><td>${esc(c.keytype)}</td></tr>`).join('');
+    w.style.display='block';
+  }catch(e){ w.style.display='none'; }
+});
+
+/* ---- fix ---- */
+const FIELDS={ doctor:[['license','เลขใบประกอบวิชาชีพ'],['providerType','Provider Type'],['council','รหัสสภาวิชาชีพ (01-07)']], pttype:[['std','รหัสมาตรฐาน INSCL']] };
+function refreshFields(){ const l=$('#fxLogical').value; $('#fxField').innerHTML=FIELDS[l].map(f=>`<option value="${f[0]}">${f[1]}</option>`).join(''); }
+$('#fxLogical').onchange=refreshFields; refreshFields();
+let lastFix=null;
+$('#previewBtn').onclick=async()=>{
+  const body={logical:$('#fxLogical').value,setField:$('#fxField').value,keyValue:$('#fxKey').value,newValue:$('#fxVal').value};
+  const box=$('#fxResult'); box.innerHTML='กำลังดึงข้อมูล…'; $('#applyBtn').disabled=true;
+  if(!body.keyValue){ box.innerHTML='<div class="banner warn">กรอกรหัส (key) ก่อน</div>'; return; }
+  try{
+    const j=await api('/api/preview-fix',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    if(!j.plan.willUpdate){ box.innerHTML='<div class="banner warn">ไม่พบแถวที่ key นี้</div>'; return; }
+    lastFix=body;
+    box.innerHTML=`<div class="banner info">จะแก้ <b>${j.plan.willUpdate}</b> แถว · คอลัมน์ <code>${esc(j.plan.setColumn)}</code>:
+      <span class="mono">[${(j.plan.currentValues||[]).map(esc).join(', ')}]</span> → <b class="mono">${esc(j.plan.newValue)}</b></div>
+      ${j.plan.writesAllowed?'':'<div class="banner warn">โหมดแก้ไขปิดอยู่ — ดูตัวอย่างได้ แต่กดยืนยันไม่ได้</div>'}`;
+    $('#applyBtn').disabled=!j.plan.writesAllowed;
+  }catch(e){ box.innerHTML='<div class="banner crit">'+esc(e.message)+'</div>'; }
+};
+$('#applyBtn').onclick=async()=>{
+  if(!lastFix) return;
+  if(!confirm('ยืนยันแก้ไขฐานข้อมูลจริง? (ระบบจะสำรองค่าเดิมไว้ให้)')) return;
+  const box=$('#fxResult');
+  try{
+    const j=await api('/api/apply-fix',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...lastFix,confirm:true})});
+    box.innerHTML=`<div class="banner info">แก้แล้ว ${j.affectedRows} แถว · สำรองไว้ที่ backups/${esc(j.backupFile)}</div>`;
+    $('#applyBtn').disabled=true;
+  }catch(e){ box.innerHTML='<div class="banner crit">'+esc(e.message)+'</div>'; }
+};
+
+/* ---- tabs ---- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  $('#tab-'+b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='schema') loadSchema();
+});
+
+/* ---- init ---- */
+refreshConn().then(loadChecks);
+</script>
+</body>
+</html>
