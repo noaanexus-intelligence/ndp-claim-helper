@@ -92,6 +92,7 @@
     <p class="sub">แต่ละรายการอ่านฐานข้อมูลอย่างเดียว ไม่แก้อะไร — กด “สแกน” เพื่อดูรายการที่ต้องแก้ พร้อมบอกว่าไปแก้ที่เมนูไหน</p>
     <div class="row" style="margin-bottom:8px">
       <label>ช่วงข้อมูลย้อนหลัง <input id="sinceDays" type="number" value="30" min="1" max="365" style="width:70px"> วัน</label>
+      <label style="margin-left:12px">เฉพาะสิทธิ (คั่นด้วย , เว้นว่าง = ทุกสิทธิ) <input id="pttypes" type="text" placeholder="เช่น 34,35" style="width:110px"></label>
       <span class="hint">(ใช้กับ check ที่อิงวันที่รับบริการ)</span>
     </div>
     <div id="checklist"></div>
@@ -179,7 +180,7 @@ async function loadChecks(){
 async function runCheck(id){
   const res=$('#res-'+id), cnt=$('#cnt-'+id); res.innerHTML='กำลังสแกน…';
   try{
-    const j=await api('/api/run-check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,sinceDays:Number($('#sinceDays').value)})});
+    const j=await api('/api/run-check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,sinceDays:Number($('#sinceDays').value),pttypes:$('#pttypes').value.split(',').map(s=>s.trim()).filter(Boolean)})});
     cnt.textContent = j.count+' รายการ'; cnt.style.color = j.count?'var(--crit)':'var(--good)';
     if(!j.count){ res.innerHTML='<div class="banner info">ไม่พบปัญหา 🎉</div>'; return; }
     const cols=Object.keys(j.rows[0]);

@@ -74,7 +74,7 @@ app.get('/api/checks', async (req, res) => {
 /** รัน check หนึ่งตัว (อ่านอย่างเดียว) */
 app.post('/api/run-check', async (req, res) => {
   try {
-    const { id, sinceDays } = req.body || {};
+    const { id, sinceDays, pttypes } = req.body || {};
     const check = CHECKS.find((c) => c.id === id);
     if (!check) throw new Error('ไม่พบ check: ' + id);
     const map = loadMap();
@@ -82,7 +82,10 @@ app.post('/api/run-check', async (req, res) => {
       const v = await verifyMap(map[logical] || {});
       if (!v.ok) throw new Error(`ตาราง "${logical}" ยังไม่แมป schema`);
     }
-    const { sql, params } = check.build(map, { sinceDays });
+    const safePttypes = Array.isArray(pttypes)
+      ? pttypes.map(String).map((s) => s.trim()).filter((s) => /^[A-Za-z0-9]{1,4}$/.test(s)).slice(0, 30)
+      : [];
+    const { sql, params } = check.build(map, { sinceDays, pttypes: safePttypes });
     const [rows] = await getPool().query(sql, params);
     res.json({ ok: true, count: rows.length, rows });
   } catch (e) { fail(res, e); }

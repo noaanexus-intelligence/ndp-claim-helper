@@ -165,6 +165,8 @@ const CHECKS = [
       const ch = m.charge, cc = ch.cols;
       const inv = m.invoice, ic = inv.cols;
       const days = Number(opts.sinceDays || 30);
+      const pts = Array.isArray(opts.pttypes) ? opts.pttypes : [];
+      const ptCond = pts.length ? `AND v.${qid(vc.pttype)} IN (${pts.map(() => '?').join(',')})` : '';
       return {
         sql: `SELECT v.${qid(vc.vn)} AS vn, v.${qid(vc.date)} AS vstdate, v.${qid(vc.hn)} AS hn,
                      v.${qid(vc.pttype)} AS pttype, SUM(o.${qid(cc.price)}) AS total_charge
@@ -173,11 +175,12 @@ const CHECKS = [
                 LEFT JOIN ${qid(inv.table)} fi ON fi.${qid(ic.vn)} = v.${qid(vc.vn)}
                WHERE v.${qid(vc.date)} >= (CURRENT_DATE - INTERVAL ? DAY)
                  AND fi.${qid(ic.id)} IS NULL
+                 ${ptCond}
                GROUP BY v.${qid(vc.vn)}, v.${qid(vc.date)}, v.${qid(vc.hn)}, v.${qid(vc.pttype)}
               HAVING SUM(o.${qid(cc.price)}) > 0
                ORDER BY v.${qid(vc.date)} DESC
                LIMIT 500`,
-        params: [days],
+        params: [days, ...pts],
       };
     },
   },
