@@ -217,7 +217,7 @@ $('#descBtn')&&($('#descBtn').onclick=async()=>{
 });
 
 /* ---- fix ---- */
-const FIELDS={ doctor:[['license','เลขใบประกอบวิชาชีพ'],['providerType','Provider Type'],['council','รหัสสภาวิชาชีพ (01-07)']], pttype:[['std','รหัสมาตรฐาน INSCL']] };
+const FIELDS={ doctor:[['license','เลขใบประกอบวิชาชีพ'],['providerType','Provider Type (provider_type_code)'],['council','รหัสสภาวิชาชีพ (01-07)']], pttype:[['std','รหัสมาตรฐาน INSCL (nhso_code)'],['subinscl','INSCL ย่อย (nhso_subinscl)'],['stdCode','รหัสมาตรฐาน 4 หลัก (pttype_std_code)']] };
 function refreshFields(){ const l=$('#fxLogical').value; $('#fxField').innerHTML=FIELDS[l].map(f=>`<option value="${f[0]}">${f[1]}</option>`).join(''); }
 $('#fxLogical').onchange=refreshFields; refreshFields();
 let lastFix=null;

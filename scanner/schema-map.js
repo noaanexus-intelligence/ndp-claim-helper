@@ -14,26 +14,32 @@ const path = require('path');
 
 const DEFAULT_MAP = {
   // บุคลากรทางการแพทย์ (ตารางตั้งค่า — แก้ไขได้)
+  // ✅ ยืนยันชื่อคอลัมน์กับฐานจริง (HOSxP XE PCU) แล้ว 14 ก.ค. 69
   doctor: {
     table: 'doctor',
     writable: true,
     cols: {
       code: 'code',
       name: 'name',
-      license: 'licenseno',       // เลขใบประกอบวิชาชีพ
-      providerType: 'provider_type',
-      council: 'council_code',    // รหัสสภาวิชาชีพ 01-07
+      license: 'licenseno',            // เลขใบประกอบวิชาชีพ
+      providerType: 'provider_type_code',
+      council: 'council_code',         // รหัสสภาวิชาชีพ 01-07
       cid: 'cid',
+      active: 'active',                // กรองเฉพาะที่ใช้งานจริง
     },
   },
   // สิทธิการรักษา (ตารางตั้งค่า — แก้ไขได้)
+  // ✅ ยืนยันแล้ว: INSCL หลัก = nhso_code, ย่อย = nhso_subinscl, มาตรฐาน = pttype_std_code
   pttype: {
     table: 'pttype',
     writable: true,
     cols: {
       code: 'pttype',
       name: 'name',
-      std: 'nhso_code',           // รหัสมาตรฐาน INSCL
+      std: 'nhso_code',                // รหัสมาตรฐาน INSCL (หลัก)
+      subinscl: 'nhso_subinscl',       // INSCL ย่อย
+      stdCode: 'pttype_std_code',      // รหัสมาตรฐาน 4 หลัก
+      inUse: 'isuse',                  // กรองเฉพาะที่เปิดใช้
     },
   },
   // การมารับบริการ (ตารางธุรกรรม — อ่านอย่างเดียว ห้ามแก้)
@@ -49,12 +55,13 @@ const DEFAULT_MAP = {
     },
   },
   // การวินิจฉัย (ตารางธุรกรรม — อ่านอย่างเดียว ห้ามแก้)
+  // ✅ ยืนยันแล้ว: รหัสโรคอยู่คอลัมน์ icd10
   diag: {
     table: 'ovstdiag',
     writable: false,
     cols: {
       vn: 'vn',
-      code: 'diagcode',
+      code: 'icd10',
       type: 'diagtype',
     },
   },

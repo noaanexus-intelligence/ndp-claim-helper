@@ -24,10 +24,11 @@ const CHECKS = [
     uses: ['doctor'],
     build: (m) => {
       const d = m.doctor, c = d.cols;
+      const activeCond = c.active ? `AND ${qid(c.active)} = 'Y'` : '';
       return {
         sql: `SELECT ${qid(c.code)} AS code, ${qid(c.name)} AS name
                 FROM ${qid(d.table)}
-               WHERE ${isBlank(qid(c.license))}
+               WHERE ${isBlank(qid(c.license))} ${activeCond}
                ORDER BY ${qid(c.name)}
                LIMIT 500`,
         params: [],
@@ -43,11 +44,12 @@ const CHECKS = [
     uses: ['doctor'],
     build: (m) => {
       const d = m.doctor, c = d.cols;
+      const activeCond = c.active ? `AND ${qid(c.active)} = 'Y'` : '';
       return {
         sql: `SELECT ${qid(c.code)} AS code, ${qid(c.name)} AS name,
                      ${qid(c.providerType)} AS provider_type, ${qid(c.council)} AS council
                 FROM ${qid(d.table)}
-               WHERE ${isBlank(qid(c.providerType))} OR ${isBlank(qid(c.council))}
+               WHERE (${isBlank(qid(c.providerType))} OR ${isBlank(qid(c.council))}) ${activeCond}
                ORDER BY ${qid(c.name)}
                LIMIT 500`,
         params: [],
@@ -63,10 +65,13 @@ const CHECKS = [
     uses: ['pttype'],
     build: (m) => {
       const p = m.pttype, c = p.cols;
+      const useCond = c.inUse ? `AND ${qid(c.inUse)} = 'Y'` : '';
+      const extra = [c.subinscl && `${qid(c.subinscl)} AS subinscl`, c.stdCode && `${qid(c.stdCode)} AS std4`]
+        .filter(Boolean).join(', ');
       return {
-        sql: `SELECT ${qid(c.code)} AS code, ${qid(c.name)} AS name, ${qid(c.std)} AS std_code
+        sql: `SELECT ${qid(c.code)} AS code, ${qid(c.name)} AS name, ${qid(c.std)} AS inscl${extra ? ', ' + extra : ''}
                 FROM ${qid(p.table)}
-               WHERE ${isBlank(qid(c.std))}
+               WHERE ${isBlank(qid(c.std))} ${useCond}
                ORDER BY ${qid(c.code)}
                LIMIT 500`,
         params: [],
