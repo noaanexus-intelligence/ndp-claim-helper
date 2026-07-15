@@ -260,7 +260,8 @@
   }
   .clitem input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; cursor: pointer; }
   .clitem .cltxt { font-size: .88rem; }
-  .clitem .clpath { font-family: var(--mono); font-size: .74rem; color: var(--ink-faint); margin-top: 4px; }
+  .clitem .cltxt { display: block; }
+  .clitem .clpath { display: block; font-family: var(--mono); font-size: .74rem; color: var(--ink-faint); margin-top: 4px; }
   .clitem.done .cltxt { text-decoration: line-through; color: var(--ink-faint); }
   .progress {
     position: sticky; top: calc(var(--top-offset, 96px) + 8px); z-index: 8; background: var(--surface); border: 1px solid var(--line-strong);
@@ -360,6 +361,10 @@
     <div class="intro">
       <h2>Checklist ตั้งค่าก่อนส่ง 13 แฟ้ม Plus</h2>
       <p>ตั้งค่าพื้นฐานใน HOSxP XE PCU ให้ครบก่อนส่งครั้งแรก — ข้อที่มักตกหล่นคือ Provider Type, รหัสมาตรฐาน และการปิดลูกหนี้ให้ได้เลข Invoice</p>
+      <div class="privacy" style="background:var(--info-wash); color:var(--info); border-color:color-mix(in srgb, var(--info) 30%, transparent)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>
+        เป็นเช็กลิสต์ช่วยจำเท่านั้น — การติ๊กไม่แตะฐานข้อมูลจริง ต้องไปตั้งค่าในโปรแกรม HOSxP เอง (เก็บสถานะไว้ในเครื่องคุณ)
+      </div>
     </div>
     <div class="progress">
       <b id="clcount">0/0</b>
