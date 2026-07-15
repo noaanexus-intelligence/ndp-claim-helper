@@ -102,44 +102,82 @@ const CHECKS = [
     },
   },
   {
-    id: 'drug_no_adp',
-    title: 'รายการยาที่ยังไม่ผูก NHSO ADP Code',
+    id: 'drug_no_adp_used',
+    title: 'ยาที่ถูกสั่งใช้จริงแต่ยังไม่ผูก NHSO ADP Code',
     severity: 'warn',
-    fixHint: 'ตั้งค่ารายการยา → กำหนด ADP Code/Type (หมวด 03,04 · CODESYS 001-TMT)',
+    fixHint: 'ผูกเฉพาะตัวที่ใช้เบิกจริง — ตั้งค่ารายการยา → ADP Code/Type (หมวด 03,04 · CODESYS 001-TMT) เรียงตามความถี่การใช้ ตัวบนสุดกระทบเคลมมากสุด',
     relatedError: 'NDP จับคู่ (map) รายการยาไม่ได้',
-    uses: ['drugitems'],
-    build: (m) => {
+    uses: ['drugitems', 'charge'],
+    build: (m, opts) => {
       const t = m.drugitems, c = t.cols;
-      const act = c.active ? `AND ${qid(c.active)} = 'Y'` : '';
+      const ch = m.charge, cc = ch.cols;
+      const days = Number(opts.sinceDays || 90);
       return {
-        sql: `SELECT ${qid(c.code)} AS icode, ${qid(c.name)} AS name,
-                     ${qid(c.adpCode)} AS adp_code, ${qid(c.adpType)} AS adp_type
-                FROM ${qid(t.table)}
-               WHERE ${isBlank(qid(c.adpCode))} ${act}
-               ORDER BY ${qid(c.name)}
+        sql: `SELECT d.${qid(c.code)} AS icode, d.${qid(c.name)} AS name,
+                     COUNT(*) AS used_count, SUM(o.${qid(cc.price)}) AS total_price
+                FROM ${qid(ch.table)} o
+                JOIN ${qid(t.table)} d ON d.${qid(c.code)} = o.${qid(cc.icode)}
+               WHERE ${isBlank('d.' + qid(c.adpCode))}
+                 AND o.${qid(cc.date)} >= (CURRENT_DATE - INTERVAL ? DAY)
+                 AND o.${qid(cc.price)} > 0
+               GROUP BY d.${qid(c.code)}, d.${qid(c.name)}
+               ORDER BY used_count DESC
                LIMIT 500`,
-        params: [],
+        params: [days],
       };
     },
   },
   {
-    id: 'nondrug_no_adp',
-    title: 'รายการค่าบริการ/หัตถการที่ยังไม่ผูก NHSO ADP Code',
+    id: 'nondrug_no_adp_used',
+    title: 'ค่าบริการ/หัตถการที่ถูกใช้จริงแต่ยังไม่ผูก NHSO ADP Code',
     severity: 'warn',
-    fixHint: 'ตั้งค่ารายการค่ารักษาพยาบาล (NonDrug Item) → ADP Code/Type + Bill Code',
+    fixHint: 'ผูกเฉพาะตัวที่ใช้เบิกจริง — NonDrug Item → ADP Code/Type + Bill Code เรียงตามความถี่การใช้ (เวชภัณฑ์/ของใช้ภายในที่ไม่เบิก ปล่อยว่างได้)',
     relatedError: 'NDP จับคู่ (map) รายการบริการไม่ได้',
-    uses: ['nondrugitems'],
-    build: (m) => {
+    uses: ['nondrugitems', 'charge'],
+    build: (m, opts) => {
       const t = m.nondrugitems, c = t.cols;
-      const act = c.active ? `AND ${qid(c.active)} = 'Y'` : '';
+      const ch = m.charge, cc = ch.cols;
+      const days = Number(opts.sinceDays || 90);
       return {
-        sql: `SELECT ${qid(c.code)} AS icode, ${qid(c.name)} AS name,
-                     ${qid(c.adpCode)} AS adp_code, ${qid(c.adpType)} AS adp_type
-                FROM ${qid(t.table)}
-               WHERE ${isBlank(qid(c.adpCode))} ${act}
-               ORDER BY ${qid(c.name)}
+        sql: `SELECT d.${qid(c.code)} AS icode, d.${qid(c.name)} AS name,
+                     COUNT(*) AS used_count, SUM(o.${qid(cc.price)}) AS total_price
+                FROM ${qid(ch.table)} o
+                JOIN ${qid(t.table)} d ON d.${qid(c.code)} = o.${qid(cc.icode)}
+               WHERE ${isBlank('d.' + qid(c.adpCode))}
+                 AND o.${qid(cc.date)} >= (CURRENT_DATE - INTERVAL ? DAY)
+                 AND o.${qid(cc.price)} > 0
+               GROUP BY d.${qid(c.code)}, d.${qid(c.name)}
+               ORDER BY used_count DESC
                LIMIT 500`,
-        params: [],
+        params: [days],
+      };
+    },
+  },
+  {
+    id: 'visit_charge_no_invoice',
+    title: 'Visit ที่มีค่าใช้จ่ายแต่ยังไม่ปิดลูกหนี้ (ไม่มีเลข Invoice)',
+    severity: 'crit',
+    fixHint: 'Finance → ปิดลูกหนี้ (hosxp_xepcu) ให้ได้เลข Invoice + เลขปิดสิทธิ ก่อนส่งเข้า NDP — นี่คือ worklist รายวัน',
+    relatedError: 'Cha.INVOICE_NO / Chad.INVOICE_NO เลขที่หนังสือต้องมากกว่า 0',
+    uses: ['visit', 'charge', 'invoice'],
+    build: (m, opts) => {
+      const v = m.visit, vc = v.cols;
+      const ch = m.charge, cc = ch.cols;
+      const inv = m.invoice, ic = inv.cols;
+      const days = Number(opts.sinceDays || 30);
+      return {
+        sql: `SELECT v.${qid(vc.vn)} AS vn, v.${qid(vc.date)} AS vstdate, v.${qid(vc.hn)} AS hn,
+                     v.${qid(vc.pttype)} AS pttype, SUM(o.${qid(cc.price)}) AS total_charge
+                FROM ${qid(v.table)} v
+                JOIN ${qid(ch.table)} o ON o.${qid(cc.vn)} = v.${qid(vc.vn)}
+                LEFT JOIN ${qid(inv.table)} fi ON fi.${qid(ic.vn)} = v.${qid(vc.vn)}
+               WHERE v.${qid(vc.date)} >= (CURRENT_DATE - INTERVAL ? DAY)
+                 AND fi.${qid(ic.id)} IS NULL
+               GROUP BY v.${qid(vc.vn)}, v.${qid(vc.date)}, v.${qid(vc.hn)}, v.${qid(vc.pttype)}
+              HAVING SUM(o.${qid(cc.price)}) > 0
+               ORDER BY v.${qid(vc.date)} DESC
+               LIMIT 500`,
+        params: [days],
       };
     },
   },

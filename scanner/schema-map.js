@@ -92,6 +92,30 @@ const DEFAULT_MAP = {
       active: 'istatus',
     },
   },
+  // ค่าใช้จ่ายรายรายการ (ตารางธุรกรรม — อ่านอย่างเดียว ห้ามแก้)
+  // ✅ ยืนยันแล้ว: vn, icode, qty, vstdate, sum_price, income, paidst, finance_number
+  charge: {
+    table: 'opitemrece',
+    writable: false,
+    cols: {
+      vn: 'vn',
+      icode: 'icode',
+      date: 'vstdate',
+      price: 'sum_price',
+    },
+  },
+  // ใบแจ้งหนี้จากการปิดลูกหนี้ (ตารางธุรกรรม — อ่านอย่างเดียว ห้ามแก้)
+  // ✅ ยืนยันแล้ว: finance_invoice_id, vn, invoice_date, invoice_amount
+  invoice: {
+    table: 'finance_invoice',
+    writable: false,
+    cols: {
+      id: 'finance_invoice_id',
+      vn: 'vn',
+      date: 'invoice_date',
+      amount: 'invoice_amount',
+    },
+  },
 };
 
 function loadMap() {
