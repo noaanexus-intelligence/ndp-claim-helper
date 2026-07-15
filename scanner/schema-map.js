@@ -18,6 +18,7 @@ const DEFAULT_MAP = {
   doctor: {
     table: 'doctor',
     writable: true,
+    fixable: ['license', 'providerType', 'council'], // แก้ได้เฉพาะ 3 ฟิลด์นี้เท่านั้น
     cols: {
       code: 'code',
       name: 'name',
@@ -33,6 +34,7 @@ const DEFAULT_MAP = {
   pttype: {
     table: 'pttype',
     writable: true,
+    fixable: ['std', 'subinscl', 'stdCode'], // แก้ได้เฉพาะรหัสมาตรฐาน INSCL เท่านั้น
     cols: {
       code: 'pttype',
       name: 'name',

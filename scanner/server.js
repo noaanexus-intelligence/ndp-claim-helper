@@ -9,7 +9,7 @@ const { loadMap } = require('./schema-map');
 const { CHECKS } = require('./checks');
 const { getPool } = require('./db');
 const { qid } = require('./schema');
-const { previewFix, applyFix, writesAllowed } = require('./fixes');
+const { previewFix, applyFix, writesAllowed, readAudit } = require('./fixes');
 
 const app = express();
 app.use(express.json());
@@ -103,6 +103,12 @@ app.post('/api/apply-fix', async (req, res) => {
     if (!req.body || req.body.confirm !== true) throw new Error('ต้องยืนยัน (confirm:true) ก่อนแก้');
     res.json({ ok: true, ...(await applyFix(req.body)) });
   } catch (e) { fail(res, e); }
+});
+
+/** ประวัติการแก้ไข (audit log) */
+app.get('/api/audit', (req, res) => {
+  try { res.json({ ok: true, entries: readAudit(Number(req.query.limit) || 50) }); }
+  catch (e) { fail(res, e); }
 });
 
 const PORT = Number(process.env.PORT || 4300);
