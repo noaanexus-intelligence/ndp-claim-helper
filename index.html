@@ -652,6 +652,11 @@ const ERRORS = [
     path:"Tools > OPD > สิทธิการรักษา → ช่องรหัสมาตรฐาน INSCL",
     kw:"inscl สิทธิ รักษา มาตรฐาน opd"},
 
+  { sev:"warn", code:"L108 / งาน KTB-PP เบิกแยก", msg:"เตือน: งาน KTB/PP เบิกแยก อย่าส่งใน 13 แฟ้ม (L108)",
+    fix:"รายการนี้ผูกรหัสกลุ่ม PP Fee Schedule (เช่น 12001 ตรวจสุขภาพ, 12003 FPG, 12004 Chol+HDL) ต้องเบิกแยกช่องทาง PP (KTB / e-Claim / MOPH Claim) — ห้ามใส่ในบิล visit ที่ส่ง 13 แฟ้ม OPD · ถ้าเป็นค่าบริการทั่วไปที่รวมในเหมาจ่าย/ค่า WALKIN แล้ว ให้ตัดรายการออกก่อนส่ง",
+    path:"หน้าตรวจรักษา > Medication → ลบรายการ 12xxx ออกจาก visit OPD / หรือแยกรายการใน NonDrug Item ให้ชัดว่าใช้กับงาน PP เท่านั้น",
+    kw:"l108 ktb pp เบิกแยก 12001 12003 12004 ตรวจสุขภาพ vital signs fee schedule"},
+
   { sev:"warn", code:"CODESYS / รหัสไม่ map", msg:"รายการยา/บริการส่งไปแล้ว NDP จับคู่ (map) ไม่ได้",
     fix:"ตรวจว่ารายการมี CODESYS ถูกระบบ (TMT/TMLT/CSMBS/NHSO) และรหัสตรงกับมาตรฐาน",
     path:"Tools > ตั้งค่ารายการยา (TMT GPU/TPU) · รายการค่าบริการ (ADP Code/Type, Bill Code) · Lab (TMLT)",
