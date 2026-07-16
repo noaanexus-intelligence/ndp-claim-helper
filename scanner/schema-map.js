@@ -104,6 +104,7 @@ const DEFAULT_MAP = {
       icode: 'icode',
       date: 'vstdate',
       price: 'sum_price',
+      financeNumber: 'finance_number', // เลขใบแจ้งหนี้ตามเส้นทางจริงของ HOSxP
     },
   },
   // ใบแจ้งหนี้จากการปิดลูกหนี้ (ตารางธุรกรรม — อ่านอย่างเดียว ห้ามแก้)

@@ -159,25 +159,27 @@ const CHECKS = [
     severity: 'crit',
     fixHint: 'Finance → ปิดลูกหนี้ (hosxp_xepcu) ให้ได้เลข Invoice + เลขปิดสิทธิ ก่อนส่งเข้า NDP — นี่คือ worklist รายวัน',
     relatedError: 'Cha.INVOICE_NO / Chad.INVOICE_NO เลขที่หนังสือต้องมากกว่า 0',
-    uses: ['visit', 'charge', 'invoice'],
+    // เส้นทางใบแจ้งหนี้จริงของ HOSxP: rcpt_debt -> cr/tr -> opitemrece.finance_number
+    // จึงตรวจที่ opitemrece.finance_number โดยตรง (ไม่ใช่ตาราง finance_invoice)
+    uses: ['visit', 'charge'],
     build: (m, opts) => {
       const v = m.visit, vc = v.cols;
       const ch = m.charge, cc = ch.cols;
-      const inv = m.invoice, ic = inv.cols;
       const days = Number(opts.sinceDays || 30);
       const pts = Array.isArray(opts.pttypes) ? opts.pttypes : [];
       const ptCond = pts.length ? `AND v.${qid(vc.pttype)} IN (${pts.map(() => '?').join(',')})` : '';
+      const fn = `o.${qid(cc.financeNumber)}`;
       return {
         sql: `SELECT v.${qid(vc.vn)} AS vn, v.${qid(vc.date)} AS vstdate, v.${qid(vc.hn)} AS hn,
-                     v.${qid(vc.pttype)} AS pttype, SUM(o.${qid(cc.price)}) AS total_charge
+                     v.${qid(vc.pttype)} AS pttype, SUM(o.${qid(cc.price)}) AS total_charge,
+                     SUM(CASE WHEN ${fn} IS NULL OR ${fn} = '' OR ${fn} = '0' THEN 1 ELSE 0 END) AS items_no_invoice
                 FROM ${qid(v.table)} v
                 JOIN ${qid(ch.table)} o ON o.${qid(cc.vn)} = v.${qid(vc.vn)}
-                LEFT JOIN ${qid(inv.table)} fi ON fi.${qid(ic.vn)} = v.${qid(vc.vn)}
                WHERE v.${qid(vc.date)} >= (CURRENT_DATE - INTERVAL ? DAY)
-                 AND fi.${qid(ic.id)} IS NULL
                  ${ptCond}
                GROUP BY v.${qid(vc.vn)}, v.${qid(vc.date)}, v.${qid(vc.hn)}, v.${qid(vc.pttype)}
               HAVING SUM(o.${qid(cc.price)}) > 0
+                 AND SUM(CASE WHEN ${fn} IS NULL OR ${fn} = '' OR ${fn} = '0' THEN 1 ELSE 0 END) > 0
                ORDER BY v.${qid(vc.date)} DESC
                LIMIT 500`,
         params: [days, ...pts],
