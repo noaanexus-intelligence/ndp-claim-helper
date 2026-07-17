@@ -1,0 +1,86 @@
+{
+  "updated": "2026-07-17",
+  "source": "ndp-claim-helper",
+  "errors": [
+    {
+      "sev": "crit",
+      "code": "L100 (แฟ้ม 3)",
+      "msg": "ProviderType ไม่มีในฐานข้อมูลของ สปสช.",
+      "fix": "ตั้งค่า Provider Type และรหัสสภาวิชาชีพให้บุคลากรทุกคนที่ให้บริการ",
+      "path": "Tools > OPD > บุคลากรทางการแพทย์ (กรอก: เลขใบประกอบวิชาชีพ, CID, Provider Type, รหัสสภาวิชาชีพ 01–07)",
+      "kw": "l100 providertype provider type แฟ้ม3 บุคลากร สภาวิชาชีพ"
+    },
+    {
+      "sev": "crit",
+      "code": "API Token",
+      "msg": "กรุณาตั้งค่า API Token ก่อน / ไม่สามารถส่งข้อมูล 13 แฟ้ม Plus เชื่อมโยงมาที่ NDP ได้",
+      "fix": "ใส่ Token ที่ขอจาก สปสช. และเปิดใช้งาน API 13 แฟ้ม Plus",
+      "path": "Tools > System > System Setting > ค้นหา “13 แฟ้ม” → ใส่ TOKEN + ตั้ง URL API = Y แล้ว Finance > ทะเบียนส่งเคลม > Task > ตั้งค่า > เลือก “API 13 แฟ้ม Plus”",
+      "kw": "token api 13แฟ้ม url ตั้งค่า เชื่อมโยง"
+    },
+    {
+      "sev": "crit",
+      "code": "Auth Code / Opd.PERMITNO",
+      "msg": "Auth Code, Opd.PERMITNO ว่าง",
+      "fix": "ตรวจสอบสิทธิและขอ Authen Code ก่อนส่งเคลม",
+      "path": "หน้าส่งเคลม > กดปุ่ม “Check Authen Code” / ตรวจสอบสิทธิ สปสช. ให้ได้เลขอนุมัติก่อน",
+      "kw": "auth code authen permitno ว่าง สิทธิ อนุมัติ"
+    },
+    {
+      "sev": "crit",
+      "code": "Diagnosis.PROFESSION_ID",
+      "msg": "เลขใบประกอบวิชาชีพ (ผู้วินิจฉัย) ว่าง / Practitioner ว่าง",
+      "fix": "กรอกเลขใบประกอบวิชาชีพให้ผู้ตรวจวินิจฉัย และระบุผู้ให้บริการในวันที่รักษา",
+      "path": "Tools > OPD > บุคลากรทางการแพทย์ → เลขใบประกอบวิชาชีพ / หน้าตรวจรักษา → ระบุผู้ตรวจวินิจฉัย",
+      "kw": "profession id ใบประกอบ practitioner ผู้วินิจฉัย ว่าง"
+    },
+    {
+      "sev": "warn",
+      "code": "Diagnosis.SEQ / DATEDX / DIAG / DIAGTYPE",
+      "msg": "ข้อมูลการวินิจฉัยไม่ครบ (SEQ, DATEDX, DIAG, DIAGTYPE)",
+      "fix": "ตรวจการวินิจฉัยให้ครบ: มีรหัส ICD-10, ประเภทการวินิจฉัย (หลัก/รอง) และวันที่วินิจฉัย",
+      "path": "หน้าตรวจรักษา > การวินิจฉัย → เพิ่มรหัสโรค + กำหนด DIAGTYPE",
+      "kw": "diagnosis seq datedx diag diagtype วินิจฉัย icd ประเภท"
+    },
+    {
+      "sev": "crit",
+      "code": "Cha.INVOICE_NO / Chad.INVOICE_NO",
+      "msg": "เลขที่หนังสือ (INVOICE_NO) ต้องมากกว่า 0",
+      "fix": "ต้องปิดลูกหนี้ให้ได้เลข Invoice ก่อนส่งเคลม (แฟ้ม CHA/CHAD ต้องมีเลขใบแจ้งหนี้)",
+      "path": "Finance > ปิดลูกหนี้ (hosxp_xepcu) → ได้เลข Invoice + เลขปิดสิทธิ แล้วจึงส่งเข้า NDP",
+      "kw": "invoice no cha chad เลขที่หนังสือ ปิดลูกหนี้ ลูกหนี้ invoice"
+    },
+    {
+      "sev": "warn",
+      "code": "Cha.TOTAL",
+      "msg": "จำนวนเงินรวมทั้ง Visit (Cha.TOTAL) ไม่ถูกต้อง",
+      "fix": "ตรวจว่ามีการบันทึกค่าบริการ/ยาครบ และยอดรวมของ Visit มากกว่า 0",
+      "path": "หน้าตรวจรักษา > การสั่งยา/ค่าบริการ → บันทึกรายการให้ครบก่อนปิด Visit",
+      "kw": "cha total จำนวนเงิน ยอดรวม visit"
+    },
+    {
+      "sev": "info",
+      "code": "INSCL / สิทธิการรักษา",
+      "msg": "รหัส INSCL สิทธิการรักษาไม่ตรงมาตรฐาน สปสช.",
+      "fix": "ตั้งค่ารหัสมาตรฐาน INSCL ให้ตรงกับสิทธิการรักษาของ สปสช.",
+      "path": "Tools > OPD > สิทธิการรักษา → ช่องรหัสมาตรฐาน INSCL",
+      "kw": "inscl สิทธิ รักษา มาตรฐาน opd"
+    },
+    {
+      "sev": "warn",
+      "code": "L108 / งาน KTB-PP เบิกแยก",
+      "msg": "เตือน: งาน KTB/PP เบิกแยก อย่าส่งใน 13 แฟ้ม (L108)",
+      "fix": "รายการนี้ผูกรหัสกลุ่ม PP Fee Schedule (เช่น 12001 ตรวจสุขภาพ, 12003 FPG, 12004 Chol+HDL) ต้องเบิกแยกช่องทาง PP (KTB / e-Claim / MOPH Claim) — ห้ามใส่ในบิล visit ที่ส่ง 13 แฟ้ม OPD · ถ้าเป็นค่าบริการทั่วไปที่รวมในเหมาจ่าย/ค่า WALKIN แล้ว ให้ตัดรายการออกก่อนส่ง",
+      "path": "หน้าตรวจรักษา > Medication → ลบรายการ 12xxx ออกจาก visit OPD / หรือแยกรายการใน NonDrug Item ให้ชัดว่าใช้กับงาน PP เท่านั้น",
+      "kw": "l108 ktb pp เบิกแยก 12001 12003 12004 ตรวจสุขภาพ vital signs fee schedule"
+    },
+    {
+      "sev": "warn",
+      "code": "CODESYS / รหัสไม่ map",
+      "msg": "รายการยา/บริการส่งไปแล้ว NDP จับคู่ (map) ไม่ได้",
+      "fix": "ตรวจว่ารายการมี CODESYS ถูกระบบ (TMT/TMLT/CSMBS/NHSO) และรหัสตรงกับมาตรฐาน",
+      "path": "Tools > ตั้งค่ารายการยา (TMT GPU/TPU) · รายการค่าบริการ (ADP Code/Type, Bill Code) · Lab (TMLT)",
+      "kw": "codesys map รหัส tmt tmlt csmbs nhso adp bill รายการ"
+    }
+  ]
+}
